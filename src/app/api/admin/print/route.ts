@@ -199,6 +199,33 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
 </head>
 <body>
 ${cards}
+<script>
+  // Auto-scale note body font down (min 11px) if text overflows the card
+  function fitNotes() {
+    document.querySelectorAll('.body-wrap').forEach(function(wrap) {
+      var body = wrap.querySelector('.note-body');
+      if (!body) return;
+      var size = 15;
+      body.style.fontSize = size + 'px';
+      while (wrap.scrollHeight > wrap.clientHeight && size > 11) {
+        size -= 0.5;
+        body.style.fontSize = size + 'px';
+      }
+      // Hard clamp — never let text bleed out
+      if (wrap.scrollHeight > wrap.clientHeight) {
+        body.style.overflow = 'hidden';
+        wrap.style.overflow = 'hidden';
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fitNotes);
+  } else {
+    fitNotes();
+  }
+  // Also run just before printing in case layout shifted
+  window.addEventListener('beforeprint', fitNotes);
+</script>
 </body>
 </html>`
 }

@@ -270,7 +270,7 @@ export default function WritePage() {
 
   const charCount = note.length
   const charMin = 50
-  const charMax = 500
+  const charMax = 300
   const charOk = charCount >= charMin && charCount <= charMax
 
   // ── Logged-out hero ──────────────────────────────────────────────────────
@@ -577,6 +577,11 @@ export default function WritePage() {
               — {profile?.name?.split(' ')[0] ?? 'You'}, Notes for Fighters Volunteer
             </p>
           )}
+
+          {/* Print tip */}
+          <p className="text-xs font-body text-charcoal/30 mt-1 ml-1">
+            Shorter notes print better on cards 🌸
+          </p>
         </div>
 
         {/* AI section */}
