@@ -17,7 +17,7 @@ const DRAFT_KEY = 'fff-note-draft'
 const PLACEHOLDER =
   "Hey Fighter — I don't know your name, but I want you to know someone out here is rooting for you. You've got this. 🌸"
 
-type AiState = 'idle' | 'loading' | 'done'
+type AiState = 'idle' | 'loading' | 'done' | 'error'
 
 interface PolishedResult {
   original: string
@@ -32,7 +32,7 @@ export default function WritePage() {
   const [prompt, setPrompt] = useState<PatientPrompt | ''>('')
   const [note, setNote] = useState('')
   const [aiState, setAiState] = useState<AiState>('idle')
-  const [aiAvailable, setAiAvailable] = useState(true)
+  // aiAvailable removed — errors show inline on the button with auto-retry
   const [polished, setPolished] = useState<PolishedResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
@@ -123,28 +123,11 @@ export default function WritePage() {
       setPolished({ original: note, polished: data.polished })
       setAiState('done')
     } catch {
-      setAiAvailable(false)
-      setAiState('idle')
+      setAiState('error')
+      setTimeout(() => setAiState('idle'), 4000)
     }
   }
 
-  async function handleGenerateUnused() {
-    setAiState('loading')
-    try {
-      const res = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientPrompt: prompt }),
-      })
-      if (!res.ok) throw new Error()
-      const data = await res.json()
-      setNote(data.generated)
-      setAiState('idle')
-    } catch {
-      setAiAvailable(false)
-      setAiState('idle')
-    }
-  }
 
   async function handleSubmit() {
     if (!user) { setShowAuth(true); return }
@@ -395,19 +378,21 @@ export default function WritePage() {
         </div>
 
         {/* AI section */}
-        {aiAvailable ? (
+        {(
           <div className="animate-fade-in-up stagger-4 space-y-3">
             <div className="flex gap-2">
               <button
                 onClick={handlePolish}
-                disabled={aiState === 'loading' || note.trim().length < charMin}
+                disabled={aiState === 'loading' || aiState === 'error' || note.trim().length < charMin}
                 className={`flex-1 py-3 rounded-2xl font-body font-semibold text-sm transition-all border ${
                   aiState === 'loading'
                     ? 'shimmer text-white border-transparent'
+                    : aiState === 'error'
+                    ? 'bg-white text-red-400 border-red-200'
                     : 'bg-white text-charcoal/80 border-cream-dark hover:border-primary/40 disabled:opacity-40'
                 }`}
               >
-                {aiState === 'loading' ? '✨ Polishing...' : '✨ Polish with AI'}
+                {aiState === 'loading' ? '✨ Polishing...' : aiState === 'error' ? '⚠️ Try again in a moment' : '✨ Polish with AI'}
               </button>
             </div>
 
@@ -439,10 +424,6 @@ export default function WritePage() {
               </div>
             )}
           </div>
-        ) : (
-          <p className="text-sm font-body text-charcoal/40 text-center py-2 animate-fade-in-up">
-            AI polishing is temporarily unavailable — your note is perfect as-is 🌸
-          </p>
         )}
 
         {/* Submit */}
