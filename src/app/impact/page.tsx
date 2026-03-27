@@ -87,31 +87,7 @@ export default function ImpactPage() {
     : 100
 
   function requestHoursLetter() {
-    const name = profile?.name ?? 'Volunteer'
-    const startDate = notes.length > 0
-      ? new Date(notes[notes.length - 1].created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-      : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    const endDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-    const hours = totalHours > 0 ? `${totalHours} hour${totalHours !== 1 ? 's' : ''}${remainingMinutes > 0 ? ` and ${remainingMinutes} minutes` : ''}` : `${remainingMinutes} minutes`
-
-    const subject = encodeURIComponent(`Volunteer Hours Letter Request — ${name}`)
-    const body = encodeURIComponent(
-`Hi Russell,
-
-I'd like to request a volunteer hours verification letter for my records. Here are my details:
-
-Name: ${name}
-Total notes written: ${totalNotes}
-Total service hours: ${hours}
-Service period: ${startDate} – ${endDate}
-Role: Note Writer — writing personalized encouragement notes for pediatric hospital patients through the Flowers for Fighters Note Writer program
-
-Please feel free to use these details to fill out the letterhead template. Thank you so much!
-
-– ${name}`
-    )
-
-    window.open(`mailto:joinflowersforfighters@gmail.com?subject=${subject}&body=${body}`)
+    router.push('/request-letter')
   }
 
   async function shareImpact() {
