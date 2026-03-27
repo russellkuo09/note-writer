@@ -128,7 +128,7 @@ export default function WritePage() {
     }
   }
 
-  async function handleGenerate() {
+  async function handleGenerateUnused() {
     setAiState('loading')
     try {
       const res = await fetch('/api/ai/generate', {
@@ -408,13 +408,6 @@ export default function WritePage() {
                 }`}
               >
                 {aiState === 'loading' ? '✨ Polishing...' : '✨ Polish with AI'}
-              </button>
-              <button
-                onClick={handleGenerate}
-                disabled={aiState === 'loading'}
-                className="flex-1 py-3 rounded-2xl font-body font-semibold text-sm bg-blush text-primary border border-blush transition-all hover:bg-primary/10 disabled:opacity-40"
-              >
-                {aiState === 'loading' ? '...' : 'Generate for Me 🌸'}
               </button>
             </div>
 
