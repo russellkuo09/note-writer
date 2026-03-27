@@ -1,0 +1,32 @@
+{
+  "name": "Flowers for Fighters",
+  "short_name": "FFF Notes",
+  "description": "Write encouragement notes for pediatric hospital patients",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDFAF6",
+  "theme_color": "#E8637A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Write a Note",
+      "url": "/",
+      "description": "Write an encouragement note for a Fighter"
+    }
+  ]
+}
