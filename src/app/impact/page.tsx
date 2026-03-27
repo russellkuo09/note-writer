@@ -13,17 +13,29 @@ import type { Note, Hospital } from '@/types'
 
 // ── Demo data ─────────────────────────────────────────────────────────────
 const DEMO_NOTES: Note[] = [
-  { id: '1', author_id: 'demo', author_name: 'Demo', hospital: 'shriners', patient_prompt: 'surgery', body: "Hey Fighter — I don't know your name but I want you to know someone out here is rooting for you. Keep fighting. 🌸", status: 'printed', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), printed_at: null },
-  { id: '2', author_id: 'demo', author_name: 'Demo', hospital: 'whittier', patient_prompt: 'teenager', body: "You are braver than you know. Keep going — there are people you've never met cheering for you every single day.", status: 'queued', created_at: new Date(Date.now() - 86400000).toISOString(), printed_at: null },
-  { id: '3', author_id: 'demo', author_name: 'Demo', hospital: 'healthbridge', patient_prompt: 'animals', body: "I heard you love animals. Did you know even the most determined little critters never give up? Just like you. 🌸", status: 'queued', created_at: new Date().toISOString(), printed_at: null },
+  { id: '1', author_id: 'demo', author_name: 'Demo', hospital: 'shriners', patient_prompt: 'surgery', body: "Hey Fighter — I don't know your name but I want you to know someone out here is rooting for you. Keep fighting. 🌸", status: 'printed', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), printed_at: null, dedication: null },
+  { id: '2', author_id: 'demo', author_name: 'Demo', hospital: 'whittier', patient_prompt: 'teenager', body: "You are braver than you know. Keep going — there are people you've never met cheering for you every single day.", status: 'queued', created_at: new Date(Date.now() - 86400000).toISOString(), printed_at: null, dedication: 'my grandpa' },
+  { id: '3', author_id: 'demo', author_name: 'Demo', hospital: 'healthbridge', patient_prompt: 'animals', body: "I heard you love animals. Did you know even the most determined little critters never give up? Just like you. 🌸", status: 'queued', created_at: new Date().toISOString(), printed_at: null, dedication: null },
 ]
+
+interface ProfileData {
+  name: string
+  role: string
+  current_streak: number
+  longest_streak: number
+  referral_code: string | null
+  referral_count: number
+  referral_bonus_minutes: number
+}
 
 export default function ImpactPage() {
   const [user, setUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
+  const [profile, setProfile] = useState<ProfileData | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const [generatingCard, setGeneratingCard] = useState(false)
+  const [referralCopied, setReferralCopied] = useState(false)
+  const [referralBannerDismissed, setReferralBannerDismissed] = useState(false)
   const shareCardRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const demoMode = isDemoMode()
@@ -32,7 +44,7 @@ export default function ImpactPage() {
   useEffect(() => {
     if (demoMode) {
       setUser({ id: 'demo', email: 'demo@example.com' } as User)
-      setProfile({ name: 'Demo', role: 'admin' })
+      setProfile({ name: 'Demo', role: 'admin', current_streak: 3, longest_streak: 5, referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 })
       fetchNotes('demo')
       return
     }
@@ -51,9 +63,13 @@ export default function ImpactPage() {
   }, [])
 
   async function fetchProfile(userId: string) {
-    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter' }); return }
-    const { data } = await supabase.from('profiles').select('name, role').eq('id', userId).single()
-    if (data) setProfile(data)
+    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter', current_streak: 3, longest_streak: 5, referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 }); return }
+    const { data } = await supabase
+      .from('profiles')
+      .select('name, role, current_streak, longest_streak, referral_code, referral_count, referral_bonus_minutes')
+      .eq('id', userId)
+      .single()
+    if (data) setProfile(data as ProfileData)
   }
 
   async function fetchNotes(userId: string) {
@@ -63,12 +79,13 @@ export default function ImpactPage() {
       .select('*')
       .eq('author_id', userId)
       .order('created_at', { ascending: false })
-    setNotes(data ?? [])
+    setNotes((data ?? []) as Note[])
     setLoading(false)
   }
 
   const totalNotes = notes.length
-  const totalMinutes = totalNotes * MINUTES_PER_NOTE
+  const referralBonusMinutes = profile?.referral_bonus_minutes ?? 0
+  const totalMinutes = totalNotes * MINUTES_PER_NOTE + referralBonusMinutes
   const totalHours = Math.floor(totalMinutes / 60)
   const remainingMinutes = totalMinutes % 60
 
@@ -79,12 +96,29 @@ export default function ImpactPage() {
     ])
   ) as Record<Hospital, number>
 
-  // Badge logic
-  const earnedBadges = BADGES.filter((b) => totalNotes >= b.threshold)
-  const nextBadge = BADGES.find((b) => totalNotes < b.threshold)
+  // Badge logic — notes badges use totalNotes, streak badges use longest_streak
+  const longestStreak = profile?.longest_streak ?? 0
+  const earnedBadges = BADGES.filter((b) =>
+    b.type === 'streak' ? longestStreak >= b.threshold : totalNotes >= b.threshold
+  )
+  const nextBadge = BADGES.filter(b => b.type === 'notes').find((b) => totalNotes < b.threshold)
   const nextProgress = nextBadge
     ? Math.min(100, (totalNotes / nextBadge.threshold) * 100)
     : 100
+
+  const currentStreak = profile?.current_streak ?? 0
+  const referralLink = profile?.referral_code
+    ? `https://notesforfighters.vercel.app?ref=${profile.referral_code}`
+    : null
+
+  async function copyReferralLink() {
+    if (!referralLink) return
+    try {
+      await navigator.clipboard.writeText(referralLink)
+      setReferralCopied(true)
+      setTimeout(() => setReferralCopied(false), 2000)
+    } catch {}
+  }
 
   function requestHoursLetter() {
     router.push('/request-letter')
@@ -135,6 +169,16 @@ export default function ImpactPage() {
 
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
 
+        {/* Referral bonus banner */}
+        {!referralBannerDismissed && referralBonusMinutes > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 animate-fade-in-up flex items-start justify-between gap-3">
+            <p className="font-body text-sm text-green-700">
+              Your friend just wrote their first note! You&apos;ve earned 30 bonus volunteer minutes 🌸
+            </p>
+            <button onClick={() => setReferralBannerDismissed(true)} className="text-xs text-green-400 shrink-0">Dismiss</button>
+          </div>
+        )}
+
         {/* Hero card */}
         <div
           className="rounded-3xl p-6 animate-fade-in-up"
@@ -150,9 +194,34 @@ export default function ImpactPage() {
           <p className="font-body text-white/70 text-sm mt-1">
             = {totalHours > 0 ? `${totalHours}h ` : ''}{remainingMinutes}m volunteer time
           </p>
-          <p className="font-body text-white/50 text-xs mt-2">
-            1 note = {MINUTES_PER_NOTE} volunteer minutes
+          <p className="font-body text-white/50 text-xs mt-1">
+            ({totalNotes} {totalNotes === 1 ? 'note' : 'notes'} × {MINUTES_PER_NOTE} min){referralBonusMinutes > 0 ? ` + ${referralBonusMinutes} bonus min` : ''}
           </p>
+        </div>
+
+        {/* Streak card */}
+        <div className="bg-white rounded-3xl border border-cream-dark p-5 animate-fade-in-up stagger-1">
+          <p className="font-body text-xs font-semibold text-charcoal/50 uppercase tracking-wide mb-3">
+            Your Streak
+          </p>
+          {currentStreak > 0 ? (
+            <>
+              <p className="font-display text-3xl font-bold text-charcoal mb-1">🔥 {currentStreak} day streak</p>
+              <p className="font-body text-sm text-charcoal/70">
+                You&apos;ve written notes {currentStreak} {currentStreak === 1 ? 'day' : 'days'} in a row — keep going!
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-xl font-semibold text-charcoal/60 mb-1">No active streak</p>
+              <p className="font-body text-sm text-charcoal/60">
+                Your streak ended — but every note counts. Start a new one today 🌸
+              </p>
+            </>
+          )}
+          {(profile?.longest_streak ?? 0) > 0 && (
+            <p className="font-body text-xs text-charcoal/40 mt-2">Longest streak: {profile?.longest_streak} days</p>
+          )}
         </div>
 
         {/* Hospital breakdown */}
@@ -177,7 +246,7 @@ export default function ImpactPage() {
           </p>
           <div className="flex gap-3 flex-wrap">
             {BADGES.map((badge) => {
-              const earned = totalNotes >= badge.threshold
+              const earned = earnedBadges.some(b => b.id === badge.id)
               return (
                 <div
                   key={badge.id}
@@ -231,6 +300,11 @@ export default function ImpactPage() {
                     <p className="font-body text-sm text-charcoal/70 truncate">
                       {n.body.slice(0, 60)}…
                     </p>
+                    {n.dedication && (
+                      <p className="font-body text-xs text-charcoal/50 italic mt-0.5">
+                        Dedicated to {n.dedication} 🌸
+                      </p>
+                    )}
                     <p className="font-body text-xs text-charcoal/40 mt-0.5">
                       {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
@@ -240,6 +314,41 @@ export default function ImpactPage() {
             </div>
           </div>
         )}
+
+        {/* Referral card */}
+        <div className="bg-white rounded-3xl border border-cream-dark p-5 animate-fade-in-up stagger-3">
+          <p className="font-body text-xs font-semibold text-charcoal/50 uppercase tracking-wide mb-3">
+            Invite a Friend 🌸
+          </p>
+          {referralLink ? (
+            <>
+              <div className="flex items-center gap-2 bg-cream rounded-xl px-3 py-2 mb-3">
+                <p className="font-body text-xs text-charcoal/70 flex-1 truncate">{referralLink}</p>
+                <button
+                  onClick={copyReferralLink}
+                  className="text-xs font-body font-semibold text-primary shrink-0"
+                >
+                  {referralCopied ? '✓ Copied!' : 'Copy'}
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-blush rounded-xl px-3 py-2 text-center">
+                  <p className="font-display text-xl font-bold text-primary">{profile?.referral_count ?? 0}</p>
+                  <p className="font-body text-xs text-charcoal/60">Friends Referred</p>
+                </div>
+                <div className="bg-blush rounded-xl px-3 py-2 text-center">
+                  <p className="font-display text-xl font-bold text-primary">{profile?.referral_bonus_minutes ?? 0} min</p>
+                  <p className="font-body text-xs text-charcoal/60">Bonus Minutes Earned</p>
+                </div>
+              </div>
+              <p className="font-body text-xs text-charcoal/50 text-center">
+                Every friend you invite = more notes for more Fighters 🌸
+              </p>
+            </>
+          ) : (
+            <p className="font-body text-sm text-charcoal/50">Loading your referral link...</p>
+          )}
+        </div>
 
         {/* Share card (hidden, used for screenshot) */}
         <div

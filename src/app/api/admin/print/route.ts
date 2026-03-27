@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import type { Note } from '@/types'
 import { HOSPITALS } from '@/types'
+import QRCode from 'qrcode'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,8 +13,11 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
 }
 
 // Build HTML for the print PDF — each note as a 4x6 card
-function buildPrintHtml(notes: Note[], hospital: string | null): string {
+async function buildPrintHtml(notes: Note[], hospital: string | null): Promise<string> {
   const title = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
+
+  // Generate QR code once (same URL for all cards)
+  const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', { width: 100, margin: 1 })
 
   const cards = notes.map((note) => `
     <div class="card">
@@ -26,6 +30,8 @@ function buildPrintHtml(notes: Note[], hospital: string | null): string {
       </div>
       <div class="note-body">${escapeHtml(note.body)}</div>
       <div class="card-footer">— ${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
+      <img src="${qrDataUrl}" class="qr-code" alt="QR code" />
+      <div class="qr-label">Scan me 🌸</div>
     </div>
   `).join('')
 
@@ -59,6 +65,7 @@ function buildPrintHtml(notes: Note[], hospital: string | null): string {
     page-break-after: always;
     margin: 0.25in auto;
     box-shadow: 0 2px 12px rgba(232,99,122,0.08);
+    position: relative;
   }
 
   .card-header {
@@ -102,6 +109,26 @@ function buildPrintHtml(notes: Note[], hospital: string | null): string {
     border-top: 1px solid #F5EFE6;
     padding-top: 0.1in;
     text-align: right;
+    padding-right: 1in;
+  }
+
+  .qr-code {
+    width: 0.75in;
+    height: 0.75in;
+    position: absolute;
+    bottom: 0.3in;
+    right: 0.4in;
+  }
+
+  .qr-label {
+    position: absolute;
+    bottom: 0.15in;
+    right: 0.4in;
+    width: 0.75in;
+    text-align: center;
+    font-size: 7pt;
+    color: #E8637A;
+    font-weight: 600;
   }
 
   @media print {
@@ -142,7 +169,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No notes to print' }, { status: 400 })
   }
 
-  const html = buildPrintHtml(notes, hospital)
+  const html = await buildPrintHtml(notes, hospital)
 
   return new NextResponse(html, {
     headers: {

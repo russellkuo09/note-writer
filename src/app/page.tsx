@@ -13,6 +13,7 @@ import { HOSPITALS, HOSPITAL_SLUGS, PATIENT_PROMPTS, MINUTES_PER_NOTE } from '@/
 import type { Hospital, PatientPrompt } from '@/types'
 
 const DRAFT_KEY = 'fff-note-draft'
+const REF_CODE_KEY = 'fff-ref-code'
 
 const PLACEHOLDER =
   "Hey Fighter — I don't know your name, but I want you to know someone out here is rooting for you. You've got this. 🌸"
@@ -24,6 +25,13 @@ interface PolishedResult {
   polished: string
 }
 
+interface SubmitSuccess {
+  hospital: string
+  minutes: number
+  new_streak: number
+  dedication: string
+}
+
 export default function WritePage() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
@@ -32,16 +40,32 @@ export default function WritePage() {
   const [prompt, setPrompt] = useState<PatientPrompt | ''>('')
   const [note, setNote] = useState('')
   const [aiState, setAiState] = useState<AiState>('idle')
-  // aiAvailable removed — errors show inline on the button with auto-retry
   const [polished, setPolished] = useState<PolishedResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState<{ hospital: string; minutes: number } | null>(null)
+  const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccess | null>(null)
   const [noteCount, setNoteCount] = useState(0)
   const [noteCountTick, setNoteCountTick] = useState(false)
+  // Dedication
+  const [dedicationEnabled, setDedicationEnabled] = useState(false)
+  const [dedication, setDedication] = useState('')
+  // Share card
+  const [showShareCard, setShowShareCard] = useState(false)
+  const [generatingShare, setGeneratingShare] = useState(false)
+  const [captionCopied, setCaptionCopied] = useState(false)
+  const shareCardRef = useRef<HTMLDivElement>(null)
   const demoMode = isDemoMode()
   const supabase = createClient()
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Read ?ref= from URL and store in localStorage
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
+    if (ref) {
+      localStorage.setItem(REF_CODE_KEY, ref)
+    }
+  }, [])
 
   // Auth state — in demo mode, auto-login as demo user
   useEffect(() => {
@@ -56,11 +80,30 @@ export default function WritePage() {
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) {
+        fetchProfile(session.user.id)
+        // Apply referral code on signup/login
+        applyReferralCode(session.user.id)
+      }
     })
     return () => subscription.unsubscribe()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function applyReferralCode(userId: string) {
+    const refCode = localStorage.getItem(REF_CODE_KEY)
+    if (!refCode) return
+    try {
+      await fetch('/api/referral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref_code: refCode, new_user_id: userId }),
+      })
+      localStorage.removeItem(REF_CODE_KEY)
+    } catch {
+      // non-critical
+    }
+  }
 
   async function fetchProfile(userId: string) {
     if (demoMode) {
@@ -140,16 +183,22 @@ export default function WritePage() {
           ? HOSPITAL_SLUGS[Math.floor(Math.random() * HOSPITAL_SLUGS.length)]
           : hospital
 
+      let new_streak = 1
       if (!demoMode) {
-        await fetch('/api/notes', {
+        const res = await fetch('/api/notes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             hospital: finalHospital,
             patient_prompt: prompt || null,
             body: note.trim(),
+            dedication: dedicationEnabled && dedication.trim() ? dedication.trim() : null,
           }),
         })
+        if (res.ok) {
+          const data = await res.json()
+          new_streak = data.new_streak ?? 1
+        }
       }
 
       // Clear draft
@@ -163,16 +212,58 @@ export default function WritePage() {
       setSubmitSuccess({
         hospital: HOSPITALS[finalHospital],
         minutes: MINUTES_PER_NOTE,
+        new_streak,
+        dedication: dedicationEnabled && dedication.trim() ? dedication.trim() : '',
       })
       setShowConfetti(true)
+      setShowShareCard(true)
       setNote('')
       setPolished(null)
       setHospital('surprise')
       setPrompt('')
+      setDedicationEnabled(false)
+      setDedication('')
     } catch (err) {
       console.error(err)
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleDownloadShareCard() {
+    if (!shareCardRef.current) return
+    setGeneratingShare(true)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 2,
+        backgroundColor: '#FDFAF6',
+        useCORS: true,
+      })
+      canvas.toBlob((blob) => {
+        if (!blob) return
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'my-note-for-fighters.png'
+        a.click()
+        URL.revokeObjectURL(url)
+      })
+    } catch {
+      alert('Error generating image — please try again.')
+    } finally {
+      setGeneratingShare(false)
+    }
+  }
+
+  async function handleCopyCaption() {
+    const caption = "I just wrote a note for a pediatric patient fighter 🌸 Anyone can do it — write yours at notesforfighters.vercel.app #NotesForFighters #FlowersForFighters"
+    try {
+      await navigator.clipboard.writeText(caption)
+      setCaptionCopied(true)
+      setTimeout(() => setCaptionCopied(false), 2000)
+    } catch {
+      // Fallback
     }
   }
 
@@ -276,20 +367,83 @@ export default function WritePage() {
         {submitSuccess && (
           <div className="bg-sage/10 border border-sage/30 rounded-2xl p-4 animate-fade-in-up">
             <p className="font-body font-semibold text-sage text-sm">
-              Your note is queued for {submitSuccess.hospital}. You&apos;ve earned{' '}
-              {submitSuccess.minutes} volunteer minutes. 🌸
+              {submitSuccess.dedication
+                ? `Your note — dedicated to ${submitSuccess.dedication} — is on its way to a Fighter. 🌸`
+                : `Your note is queued for ${submitSuccess.hospital}. You've earned ${submitSuccess.minutes} volunteer minutes. 🌸`}
+            </p>
+            {/* Streak message */}
+            <p className="font-body text-sm text-charcoal/70 mt-1">
+              {submitSuccess.new_streak > 1
+                ? `🔥 ${submitSuccess.new_streak} day streak! Come back tomorrow to keep it going.`
+                : '🌸 Day 1 — come back tomorrow to start a streak!'}
             </p>
             <p className="font-body text-xs text-charcoal/50 italic mt-1">
               Signed as: — {profile?.name?.split(' ')[0] ?? 'You'}, Notes for Fighters Volunteer
             </p>
             <button
-              onClick={() => setSubmitSuccess(null)}
+              onClick={() => { setSubmitSuccess(null); setShowShareCard(false) }}
               className="text-xs text-charcoal/40 mt-1"
             >
               Dismiss
             </button>
           </div>
         )}
+
+        {/* Share your note card */}
+        {showShareCard && submitSuccess && (
+          <div className="bg-white border border-cream-dark rounded-2xl p-4 animate-fade-in-up">
+            <p className="font-body font-semibold text-charcoal text-sm mb-3">Share Your Note 🌸</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDownloadShareCard}
+                disabled={generatingShare}
+                className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm bg-blush text-primary border border-primary/20 disabled:opacity-40"
+              >
+                {generatingShare ? '...' : '⬇️ Download Image'}
+              </button>
+              <button
+                onClick={handleCopyCaption}
+                className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm bg-white text-charcoal border border-cream-dark"
+              >
+                {captionCopied ? '✓ Copied!' : '📋 Copy Caption'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden share card for html2canvas */}
+        <div
+          ref={shareCardRef}
+          className="fixed"
+          style={{ left: '-9999px', top: 0, width: '400px', height: '400px', background: '#FDFAF6', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden', position: 'fixed' }}
+          aria-hidden="true"
+        >
+          {/* Corner flowers */}
+          <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 28 }}>🌸</span>
+          <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 28 }}>🌸</span>
+          <span style={{ position: 'absolute', bottom: 48, left: 12, fontSize: 28 }}>🌸</span>
+          <span style={{ position: 'absolute', bottom: 48, right: 12, fontSize: 28 }}>🌸</span>
+          {/* Header */}
+          <div style={{ paddingTop: 24, textAlign: 'center' }}>
+            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 18, color: '#E8637A' }}>Notes for Fighters</p>
+          </div>
+          {/* Blurred note body */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 32px' }}>
+            <p style={{ fontFamily: 'Playfair Display, Georgia, serif', fontStyle: 'italic', fontSize: 15, color: '#1A1A2E', textAlign: 'center', lineHeight: 1.6, filter: 'blur(3px)', userSelect: 'none' }}>
+              {submitSuccess?.hospital ? `A heartfelt note for a fighter at ${submitSuccess.hospital}` : 'A heartfelt note for a fighter'}
+            </p>
+          </div>
+          {/* Signature */}
+          <div style={{ textAlign: 'center', paddingBottom: 8 }}>
+            <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#7BAE8A' }}>
+              — {profile?.name?.split(' ')[0] ?? 'A volunteer'}, Notes for Fighters Volunteer
+            </p>
+          </div>
+          {/* Bottom strip */}
+          <div style={{ width: '100%', background: '#E8637A', padding: '10px 0', textAlign: 'center' }}>
+            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'white' }}>notesforfighters.vercel.app</p>
+          </div>
+        </div>
 
         {/* Greeting */}
         <div className="animate-fade-in-up">
@@ -321,6 +475,36 @@ export default function WritePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Dedication toggle */}
+        <div className="animate-fade-in-up stagger-1">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setDedicationEnabled(!dedicationEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${dedicationEnabled ? 'bg-primary' : 'bg-cream-dark'}`}
+              role="switch"
+              aria-checked={dedicationEnabled}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${dedicationEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+              />
+            </button>
+            <span className="font-body text-sm text-charcoal/70">Dedicate this note <span className="text-charcoal/40">(optional)</span></span>
+          </div>
+          {dedicationEnabled && (
+            <div className="mt-2">
+              <input
+                type="text"
+                value={dedication}
+                onChange={(e) => setDedication(e.target.value.slice(0, 60))}
+                placeholder="e.g. my little sister Emma, my grandpa who fought cancer"
+                maxLength={60}
+                className="w-full px-4 py-2.5 rounded-xl border border-cream-dark bg-white font-body text-sm text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-primary/40"
+              />
+              <p className="text-xs text-charcoal/40 mt-1 text-right">{dedication.length}/60</p>
+            </div>
+          )}
         </div>
 
         {/* Patient prompt */}
