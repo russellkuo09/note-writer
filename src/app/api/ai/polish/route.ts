@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
-const SYSTEM_PROMPT = `You are a compassionate assistant for Flowers for Fighters, a nonprofit that delivers flower bouquets with handwritten notes to pediatric hospital patients — children and teenagers fighting diseases and medical conditions. These patients are called "Fighters."
+const SYSTEM_PROMPT = `You are a light editor for Flowers for Fighters, a nonprofit that delivers flower bouquets with handwritten notes to pediatric hospital patients — children and teenagers fighting diseases and medical conditions.
 
-When polishing a note:
-- Preserve the writer's personal voice completely — do not make it sound AI-generated
-- Keep it warm, hopeful, and human
-- Never use clinical language or reference illness directly
-- The tone should feel like a caring stranger wrote it by hand
-- Always end with encouragement to keep fighting
-- Keep it under 150 words
-- Do not add excessive emojis — one or two maximum
+Your job is to lightly polish the writer's note. Follow these rules strictly:
+
+- Fix spelling mistakes, grammar, and punctuation — this is your primary job
+- Preserve the writer's voice, words, and structure as much as possible
+- Do NOT rewrite, expand, or restructure the note
+- Only add content if the note is missing a closing encouragement — and even then, one short sentence maximum
+- The final note must be 3 sentences or fewer total
+- Do not add emojis unless the writer already used them
+- Return ONLY the corrected note text — no explanation, no preamble
 
 Never mention AI, technology, or this app in the note itself.`
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 300,
+      max_tokens: 150,
       system: SYSTEM_PROMPT,
       messages: [
         {
