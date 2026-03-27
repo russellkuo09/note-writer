@@ -230,14 +230,14 @@ export default function WritePage() {
           </button>
 
           <p className="font-body text-xs text-charcoal/40 mt-4">
-            Free • Takes 2 minutes • Earns volunteer hours
+            Free • Earn 15 volunteer minutes per note
           </p>
         </div>
 
         {/* Footer */}
         <div className="pb-8 px-6 text-center">
           <p className="font-body text-xs text-charcoal/30">
-            Diamond Bar, CA &nbsp;·&nbsp; Founded by Russell Kuo, age 16 &nbsp;·&nbsp; @flowersforfighters
+            Diamond Bar, CA &nbsp;·&nbsp; @fff.initiative
           </p>
         </div>
       </div>
