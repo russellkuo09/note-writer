@@ -25,6 +25,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [printing, setPrinting] = useState(false)
   const [confirmPrint, setConfirmPrint] = useState(false)
+  const [showBrandingModal, setShowBrandingModal] = useState(false)
+  const [selectedBranding, setSelectedBranding] = useState<'flowers' | 'notes'>('flowers')
   const [unauthorized, setUnauthorized] = useState(false)
   const router = useRouter()
   const demoMode = isDemoMode()
@@ -87,12 +89,21 @@ export default function AdminPage() {
     fetchNotes()
   }
 
-  async function handleBatchPrint() {
+  function handleBatchPrint() {
     const targetHospital = activeTab === 'all' ? null : activeTab
     const queuedNotes = notes.filter(
       (n) => n.status === 'queued' && (targetHospital === null || n.hospital === targetHospital)
     )
+    if (queuedNotes.length === 0) return
+    setShowBrandingModal(true)
+  }
 
+  async function executePrint() {
+    setShowBrandingModal(false)
+    const targetHospital = activeTab === 'all' ? null : activeTab
+    const queuedNotes = notes.filter(
+      (n) => n.status === 'queued' && (targetHospital === null || n.hospital === targetHospital)
+    )
     if (queuedNotes.length === 0) return
 
     setPrinting(true)
@@ -104,6 +115,7 @@ export default function AdminPage() {
           noteIds: queuedNotes.map((n) => n.id),
           hospital: targetHospital,
           notes: queuedNotes,
+          branding: selectedBranding,
         }),
       })
       if (!res.ok) throw new Error()
@@ -111,7 +123,7 @@ export default function AdminPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `fff-notes-${targetHospital ?? 'all'}-${new Date().toISOString().slice(0, 10)}.pdf`
+      a.download = `fff-notes-${targetHospital ?? 'all'}-${new Date().toISOString().slice(0, 10)}.html`
       a.click()
       URL.revokeObjectURL(url)
       setConfirmPrint(true)
@@ -173,6 +185,58 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
+      {/* Branding selector modal */}
+      {showBrandingModal && (
+        <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-fade-in-up">
+            <h3 className="font-display text-xl font-semibold text-charcoal mb-1 text-center">Choose card branding</h3>
+            <p className="font-body text-xs text-charcoal/50 text-center mb-5">Select which name appears on the printed cards</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              {/* Option A — Flowers for Fighters */}
+              <button
+                onClick={() => setSelectedBranding('flowers')}
+                className={`rounded-2xl p-4 border-2 text-left transition-all ${selectedBranding === 'flowers' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
+              >
+                <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 15, color: '#E8637A', lineHeight: 1.2 }} className="mb-1">
+                  Flowers for Fighters
+                </p>
+                <p className="font-body text-xs text-charcoal/40 italic mb-2">A note for you, Fighter 🌸</p>
+                <p className="font-body text-xs text-primary font-semibold">For bouquet deliveries 🌸</p>
+              </button>
+
+              {/* Option B — Notes for Fighters */}
+              <button
+                onClick={() => setSelectedBranding('notes')}
+                className={`rounded-2xl p-4 border-2 text-left transition-all ${selectedBranding === 'notes' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
+              >
+                <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 15, color: '#E8637A', lineHeight: 1.2 }} className="mb-1">
+                  Notes for Fighters
+                </p>
+                <p className="font-body text-xs text-charcoal/40 italic mb-2">A note for you, Fighter 🌸</p>
+                <p className="font-body text-xs text-primary font-semibold">For notes-only deliveries ✉️</p>
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowBrandingModal(false)}
+                className="flex-1 py-3 rounded-2xl font-body font-semibold text-charcoal/60 border border-cream-dark"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executePrint}
+                className="flex-1 py-3 rounded-2xl font-body font-semibold text-white bg-primary"
+                style={{ boxShadow: '0 4px 16px rgba(232,99,122,0.3)' }}
+              >
+                Generate PDF 🖨️
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Confirm print modal */}
       {confirmPrint && (
         <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">

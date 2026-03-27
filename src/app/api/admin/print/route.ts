@@ -13,25 +13,34 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
 }
 
 // Build HTML for the print PDF — each note as a 4x6 card
-async function buildPrintHtml(notes: Note[], hospital: string | null): Promise<string> {
+async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 'flowers' | 'notes'): Promise<string> {
   const title = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
+  const orgName = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
+  const footerUrl = branding === 'flowers' ? 'flowersforfighters.base44.app' : 'notesforfighters.vercel.app'
 
   // Generate QR code once (same URL for all cards)
-  const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', { width: 100, margin: 1 })
+  const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', {
+    width: 108,
+    margin: 1,
+    color: { dark: '#1A1A2E', light: '#FDFAF6' },
+  })
 
   const cards = notes.map((note) => `
     <div class="card">
       <div class="card-header">
-        <div class="flower">🌸</div>
-        <div class="header-text">
-          <div class="org-name">Flowers for Fighters</div>
-          <div class="subtitle">A note for you, Fighter 🌸</div>
-        </div>
+        <div class="org-name">${escapeHtml(orgName)}</div>
+        <div class="subheader">A note for you, Fighter 🌸</div>
+        <div class="divider"></div>
       </div>
       <div class="note-body">${escapeHtml(note.body)}</div>
       <div class="card-footer">— ${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
-      <img src="${qrDataUrl}" class="qr-code" alt="QR code" />
-      <div class="qr-label">Scan me 🌸</div>
+      <div class="bottom-strip">
+        <div class="footer-url">${escapeHtml(footerUrl)}</div>
+        <div class="qr-wrap">
+          <img src="${qrDataUrl}" class="qr-code" alt="QR" />
+          <div class="qr-label">Scan me 🌸</div>
+        </div>
+      </div>
     </div>
   `).join('')
 
@@ -39,15 +48,15 @@ async function buildPrintHtml(notes: Note[], hospital: string | null): Promise<s
 <html>
 <head>
 <meta charset="utf-8">
-<title>Flowers for Fighters Notes — ${escapeHtml(title)}</title>
+<title>${escapeHtml(orgName)} Notes — ${escapeHtml(title)}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     background: #f0f0f0;
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Playfair Display', Georgia, serif;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -57,83 +66,111 @@ async function buildPrintHtml(notes: Note[], hospital: string | null): Promise<s
     height: 4in;
     background: #FDFAF6;
     border: 1px solid #F9DDE0;
-    border-radius: 16px;
-    padding: 0.4in 0.45in;
+    border-radius: 12px;
+    padding: 0.35in 0.45in 0.25in;
     display: flex;
     flex-direction: column;
-    gap: 0.18in;
     page-break-after: always;
     margin: 0.25in auto;
     box-shadow: 0 2px 12px rgba(232,99,122,0.08);
     position: relative;
   }
 
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border-bottom: 1px solid #F9DDE0;
-    padding-bottom: 0.12in;
-  }
-
-  .flower { font-size: 28px; }
-
+  /* 1. Branding header */
   .org-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 14pt;
-    font-weight: 600;
-    color: #1A1A2E;
-  }
-
-  .subtitle {
-    font-size: 9pt;
+    font-family: 'Dancing Script', cursive;
+    font-weight: 700;
+    font-size: 22px;
     color: #E8637A;
-    font-weight: 600;
-    margin-top: 2px;
+    line-height: 1;
+    margin-bottom: 4px;
   }
 
+  /* 2. Subheader */
+  .subheader {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 8px;
+  }
+
+  /* 3. Divider */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: #F9DDE0;
+    margin-bottom: 0.14in;
+  }
+
+  .card-header {
+    flex-shrink: 0;
+  }
+
+  /* 4. Note body */
   .note-body {
     font-family: 'Playfair Display', serif;
-    font-size: 12pt;
-    line-height: 1.7;
+    font-size: 13px;
+    line-height: 1.8;
     color: #1A1A2E;
     flex: 1;
     white-space: pre-wrap;
-    font-style: italic;
+    overflow: hidden;
   }
 
+  /* 5. Signature */
   .card-footer {
-    font-size: 9pt;
-    color: #7BAE8A;
-    font-weight: 600;
-    border-top: 1px solid #F5EFE6;
-    padding-top: 0.1in;
-    text-align: right;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: #E8637A;
+    margin-top: 0.1in;
     padding-right: 1in;
+  }
+
+  /* Bottom strip — footer URL + QR */
+  .bottom-strip {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 0.1in;
+    padding-top: 0.08in;
+    border-top: 1px solid #F5EFE6;
+  }
+
+  /* 7. Footer URL */
+  .footer-url {
+    font-size: 9px;
+    color: #aaa;
+    font-family: 'Playfair Display', serif;
+    align-self: flex-end;
+    padding-bottom: 4px;
+  }
+
+  /* 6. QR code */
+  .qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
   }
 
   .qr-code {
     width: 0.75in;
     height: 0.75in;
-    position: absolute;
-    bottom: 0.3in;
-    right: 0.4in;
+    display: block;
   }
 
   .qr-label {
-    position: absolute;
-    bottom: 0.15in;
-    right: 0.4in;
-    width: 0.75in;
+    font-size: 7px;
+    color: #888;
     text-align: center;
-    font-size: 7pt;
-    color: #E8637A;
-    font-weight: 600;
+    font-family: 'Playfair Display', serif;
   }
 
   @media print {
     body { background: white; }
-    .card { margin: 0; box-shadow: none; page-break-after: always; }
+    .card { margin: 0; box-shadow: none; border: none; page-break-after: always; }
   }
 </style>
 </head>
@@ -163,13 +200,13 @@ export async function POST(req: NextRequest) {
     if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { notes, hospital } = await req.json() as { notes: Note[]; hospital: string | null }
+  const { notes, hospital, branding } = await req.json() as { notes: Note[]; hospital: string | null; branding?: 'flowers' | 'notes' }
 
   if (!notes || notes.length === 0) {
     return NextResponse.json({ error: 'No notes to print' }, { status: 400 })
   }
 
-  const html = await buildPrintHtml(notes, hospital)
+  const html = await buildPrintHtml(notes, hospital, branding ?? 'flowers')
 
   return new NextResponse(html, {
     headers: {
