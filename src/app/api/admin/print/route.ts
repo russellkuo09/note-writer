@@ -12,186 +12,190 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
   return user
 }
 
-// Build HTML for the print PDF — each note as a 4x6 card
+// Build HTML for the print PDF — each note as a 4x6 card, one page per note
 async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 'flowers' | 'notes'): Promise<string> {
-  const title = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
-  const orgName = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
+  const title    = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
+  const orgName  = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
   const footerUrl = branding === 'flowers' ? 'flowersforfighters.base44.app' : 'notesforfighters.vercel.app'
 
-  // Generate QR code once (same URL for all cards)
+  // QR code as base64 PNG so it renders offline / in print dialogs
   const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', {
-    width: 108,
+    width: 80,
     margin: 1,
     color: { dark: '#1A1A2E', light: '#FFFFFF' },
   })
 
-  // Drop-cap branded name HTML — inline spans with varying font sizes
-  function brandHtml(name: 'flowers' | 'notes'): string {
-    const first = name === 'flowers' ? 'Flowers' : 'Notes'
-    const ds = 'font-family:"Dancing Script",cursive;font-weight:700;color:#E8637A;'
-    const span = (letter: string, size: number) =>
-      `<span style="${ds}font-size:${size}px;line-height:1">${escapeHtml(letter)}</span>`
-    return (
-      span(first[0], 38) + `<span style="${ds}font-size:22px">${escapeHtml(first.slice(1))}</span>` +
-      ' ' +
-      span('f', 28) + `<span style="${ds}font-size:22px">or</span>` +
-      ' ' +
-      span('F', 38) + `<span style="${ds}font-size:22px">ighters</span>`
-    )
-  }
-
-  // Each note = 2 pages: blank front (for FFF handwritten card) + back with content
   const cards = notes.map((note) => `
-    <div class="card card-blank"></div>
-    <div class="card card-back">
-      <div class="card-header">
-        <div class="org-name">${brandHtml(branding)}</div>
+    <div class="card">
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="org-name">${escapeHtml(orgName)}</div>
         <div class="subheader">A note for you, Fighter 🌸</div>
         <div class="divider"></div>
       </div>
-      <div class="note-body">${escapeHtml(note.body)}</div>
-      <div class="card-footer">— ${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
-      <div class="bottom-strip">
-        <div class="footer-url">${escapeHtml(footerUrl)}</div>
+
+      <!-- BODY — grows to fill available space -->
+      <div class="body-wrap">
+        <div class="note-body">${escapeHtml(note.body)}</div>
+      </div>
+
+      <!-- FOOTER ROW — signature left, QR right -->
+      <div class="footer-row">
+        <div class="footer-left">
+          <div class="signature">&#8212;&nbsp;${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
+          <div class="footer-url">${escapeHtml(footerUrl)}</div>
+        </div>
         <div class="qr-wrap">
-          <img src="${qrDataUrl}" class="qr-code" alt="QR" />
+          <img src="${qrDataUrl}" class="qr-code" alt="Scan me" />
           <div class="qr-label">Scan me 🌸</div>
         </div>
       </div>
+
     </div>
   `).join('')
 
+  // Google Fonts loaded via <link> — more reliable than @import for print
   return `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>${escapeHtml(orgName)} Notes — ${escapeHtml(title)}</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
+  <meta charset="utf-8">
+  <title>${escapeHtml(orgName)} — ${escapeHtml(title)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Page setup ── */
+    @page {
+      size: 6in 4in;
+      margin: 0;
+    }
 
-  body {
-    background: #fff;
-    font-family: 'Playfair Display', Georgia, serif;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+    html, body {
+      width: 6in;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
 
-  /* Shared card shell — white, no ink-wasting background */
-  .card {
-    width: 6in;
-    height: 4in;
-    background: #FFFFFF;
-    padding: 0.35in 0.45in 0.25in;
-    display: flex;
-    flex-direction: column;
-    page-break-after: always;
-    margin: 0.2in auto;
-    position: relative;
-  }
+    /* ── Card ── */
+    .card {
+      width: 6in;
+      height: 4in;
+      background: #FFFFFF;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      page-break-after: always;
+      break-after: page;
+      overflow: hidden;
+      position: relative;
+    }
 
-  /* Page 1 — completely blank (volunteer places handwritten card here) */
-  .card-blank {
-    /* intentionally empty */
-  }
+    /* ── Header ── */
+    .header { flex-shrink: 0; margin-bottom: 14px; }
 
-  /* Page 2 — note content */
-  .card-back {
-    /* inherits .card */
-  }
+    .org-name {
+      font-family: 'Dancing Script', cursive;
+      font-weight: 700;
+      font-size: 36px;
+      color: #E8637A;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
 
-  /* 1. Branding header */
-  .org-name {
-    line-height: 1;
-    margin-bottom: 4px;
-  }
+    .subheader {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 12px;
+      color: #aaaaaa;
+      margin-bottom: 12px;
+    }
 
-  /* 2. Subheader */
-  .subheader {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 11px;
-    color: #888;
-    margin-bottom: 8px;
-  }
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: #F9DDE0;
+    }
 
-  /* 3. Divider */
-  .divider {
-    width: 100%;
-    height: 1px;
-    background: #F9DDE0;
-    margin-bottom: 0.14in;
-  }
+    /* ── Body ── */
+    .body-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 18px 0;
+      overflow: hidden;
+    }
 
-  .card-header { flex-shrink: 0; }
+    .note-body {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 15px;
+      line-height: 2.0;
+      color: #1A1A2E;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
-  /* 4. Note body */
-  .note-body {
-    font-family: 'Playfair Display', serif;
-    font-size: 13px;
-    line-height: 1.8;
-    color: #1A1A2E;
-    flex: 1;
-    white-space: pre-wrap;
-    overflow: hidden;
-  }
+    /* ── Footer row ── */
+    .footer-row {
+      flex-shrink: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
 
-  /* 5. Signature */
-  .card-footer {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 12px;
-    color: #E8637A;
-    margin-top: 0.1in;
-    padding-right: 1in;
-  }
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-  /* Bottom strip */
-  .bottom-strip {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-top: 0.1in;
-    padding-top: 0.08in;
-    border-top: 1px solid #F5EFE6;
-  }
+    .signature {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-style: italic;
+      font-size: 13px;
+      color: #E8637A;
+    }
 
-  /* 7. Footer URL */
-  .footer-url {
-    font-size: 9px;
-    color: #aaa;
-    font-family: 'Playfair Display', serif;
-    align-self: flex-end;
-    padding-bottom: 4px;
-  }
+    .footer-url {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 10px;
+      color: #cccccc;
+    }
 
-  /* 6. QR */
-  .qr-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
+    /* ── QR ── */
+    .qr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
 
-  .qr-code {
-    width: 0.75in;
-    height: 0.75in;
-    display: block;
-  }
+    .qr-code {
+      width: 60px;
+      height: 60px;
+      display: block;
+    }
 
-  .qr-label {
-    font-size: 7px;
-    color: #888;
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-  }
+    .qr-label {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 8px;
+      color: #aaaaaa;
+      text-align: center;
+    }
 
-  @media print {
-    body { background: white; }
-    .card { margin: 0; page-break-after: always; }
-  }
-</style>
+    @media print {
+      html, body { background: #fff; }
+      .card { margin: 0; }
+    }
+  </style>
 </head>
 <body>
 ${cards}
