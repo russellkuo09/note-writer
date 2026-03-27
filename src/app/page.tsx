@@ -109,7 +109,7 @@ export default function WritePage() {
   }, [note, hospital, prompt, saveDraft])
 
   async function handlePolish() {
-    if (!note.trim() || note.trim().length < 20) return
+    if (!note.trim() || note.trim().length < 50) return
     setAiState('loading')
     setPolished(null)
     try {
@@ -131,7 +131,7 @@ export default function WritePage() {
 
   async function handleSubmit() {
     if (!user) { setShowAuth(true); return }
-    if (!note.trim() || note.trim().length < 20) return
+    if (!note.trim() || note.trim().length < 50) return
 
     setSubmitting(true)
     try {
@@ -177,7 +177,7 @@ export default function WritePage() {
   }
 
   const charCount = note.length
-  const charMin = 20
+  const charMin = 50
   const charMax = 500
   const charOk = charCount >= charMin && charCount <= charMax
 
@@ -279,6 +279,9 @@ export default function WritePage() {
               Your note is queued for {submitSuccess.hospital}. You&apos;ve earned{' '}
               {submitSuccess.minutes} volunteer minutes. 🌸
             </p>
+            <p className="font-body text-xs text-charcoal/50 italic mt-1">
+              Signed as: — {profile?.name?.split(' ')[0] ?? 'You'}, Notes for Fighters Volunteer
+            </p>
             <button
               onClick={() => setSubmitSuccess(null)}
               className="text-xs text-charcoal/40 mt-1"
@@ -373,6 +376,13 @@ export default function WritePage() {
           {charCount > 0 && charCount < charMin && (
             <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">
               Add a few more words — {charMin - charCount} more to go
+            </p>
+          )}
+
+          {/* Signature preview */}
+          {charCount >= charMin && (
+            <p className="text-xs font-body text-charcoal/40 mt-2 ml-1 italic animate-fade-in-up">
+              — {profile?.name?.split(' ')[0] ?? 'You'}, Notes for Fighters Volunteer
             </p>
           )}
         </div>

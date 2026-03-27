@@ -25,7 +25,7 @@ function buildPrintHtml(notes: Note[], hospital: string | null): string {
         </div>
       </div>
       <div class="note-body">${escapeHtml(note.body)}</div>
-      <div class="card-footer">— ${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Flowers for Fighters Volunteer</div>
+      <div class="card-footer">— ${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
     </div>
   `).join('')
 
