@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient, isDemoMode } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import Logo from '@/components/Logo'
+import BrandText from '@/components/BrandText'
 import Navigation from '@/components/Navigation'
 import AuthModal from '@/components/AuthModal'
 import ConfettiEffect from '@/components/ConfettiEffect'
@@ -289,6 +290,9 @@ export default function WritePage() {
             <Logo size="lg" className="justify-center mb-6" />
           </div>
 
+          <div className="mb-3 animate-fade-in-up stagger-2">
+            <BrandText variant="flowers" />
+          </div>
           <h1 className="font-display text-4xl font-bold text-charcoal leading-tight mb-4 animate-fade-in-up stagger-2">
             Write a note.
             <br />
@@ -425,7 +429,11 @@ export default function WritePage() {
           <span style={{ position: 'absolute', bottom: 48, right: 12, fontSize: 28 }}>🌸</span>
           {/* Header */}
           <div style={{ paddingTop: 24, textAlign: 'center' }}>
-            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 18, color: '#E8637A' }}>Notes for Fighters</p>
+            <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, color: '#E8637A', lineHeight: 1 }}>
+              <span style={{ fontSize: 28 }}>N</span><span style={{ fontSize: 16 }}>otes</span>
+              {' '}<span style={{ fontSize: 20 }}>f</span><span style={{ fontSize: 16 }}>or</span>
+              {' '}<span style={{ fontSize: 28 }}>F</span><span style={{ fontSize: 16 }}>ighters</span>
+            </p>
           </div>
           {/* Blurred note body */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 32px' }}>

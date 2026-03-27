@@ -22,13 +22,30 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
   const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', {
     width: 108,
     margin: 1,
-    color: { dark: '#1A1A2E', light: '#FDFAF6' },
+    color: { dark: '#1A1A2E', light: '#FFFFFF' },
   })
 
+  // Drop-cap branded name HTML — inline spans with varying font sizes
+  function brandHtml(name: 'flowers' | 'notes'): string {
+    const first = name === 'flowers' ? 'Flowers' : 'Notes'
+    const ds = 'font-family:"Dancing Script",cursive;font-weight:700;color:#E8637A;'
+    const span = (letter: string, size: number) =>
+      `<span style="${ds}font-size:${size}px;line-height:1">${escapeHtml(letter)}</span>`
+    return (
+      span(first[0], 38) + `<span style="${ds}font-size:22px">${escapeHtml(first.slice(1))}</span>` +
+      ' ' +
+      span('f', 28) + `<span style="${ds}font-size:22px">or</span>` +
+      ' ' +
+      span('F', 38) + `<span style="${ds}font-size:22px">ighters</span>`
+    )
+  }
+
+  // Each note = 2 pages: blank front (for FFF handwritten card) + back with content
   const cards = notes.map((note) => `
-    <div class="card">
+    <div class="card card-blank"></div>
+    <div class="card card-back">
       <div class="card-header">
-        <div class="org-name">${escapeHtml(orgName)}</div>
+        <div class="org-name">${brandHtml(branding)}</div>
         <div class="subheader">A note for you, Fighter 🌸</div>
         <div class="divider"></div>
       </div>
@@ -55,33 +72,37 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: #f0f0f0;
+    background: #fff;
     font-family: 'Playfair Display', Georgia, serif;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
+  /* Shared card shell — white, no ink-wasting background */
   .card {
     width: 6in;
     height: 4in;
-    background: #FDFAF6;
-    border: 1px solid #F9DDE0;
-    border-radius: 12px;
+    background: #FFFFFF;
     padding: 0.35in 0.45in 0.25in;
     display: flex;
     flex-direction: column;
     page-break-after: always;
-    margin: 0.25in auto;
-    box-shadow: 0 2px 12px rgba(232,99,122,0.08);
+    margin: 0.2in auto;
     position: relative;
+  }
+
+  /* Page 1 — completely blank (volunteer places handwritten card here) */
+  .card-blank {
+    /* intentionally empty */
+  }
+
+  /* Page 2 — note content */
+  .card-back {
+    /* inherits .card */
   }
 
   /* 1. Branding header */
   .org-name {
-    font-family: 'Dancing Script', cursive;
-    font-weight: 700;
-    font-size: 22px;
-    color: #E8637A;
     line-height: 1;
     margin-bottom: 4px;
   }
@@ -103,9 +124,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     margin-bottom: 0.14in;
   }
 
-  .card-header {
-    flex-shrink: 0;
-  }
+  .card-header { flex-shrink: 0; }
 
   /* 4. Note body */
   .note-body {
@@ -128,7 +147,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     padding-right: 1in;
   }
 
-  /* Bottom strip — footer URL + QR */
+  /* Bottom strip */
   .bottom-strip {
     display: flex;
     align-items: flex-end;
@@ -147,7 +166,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     padding-bottom: 4px;
   }
 
-  /* 6. QR code */
+  /* 6. QR */
   .qr-wrap {
     display: flex;
     flex-direction: column;
@@ -170,7 +189,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
 
   @media print {
     body { background: white; }
-    .card { margin: 0; box-shadow: none; border: none; page-break-after: always; }
+    .card { margin: 0; page-break-after: always; }
   }
 </style>
 </head>

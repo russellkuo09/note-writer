@@ -1,30 +1,33 @@
+// Logo component — shows the bouquet image + Dancing Script brand text.
+// To swap the image: replace /public/logo.png.
+// To swap the text style: update BrandText.tsx.
 
-// Logo component — uses the real Flowers for Fighters logo from /public/logo.png
-// To update the logo: replace /public/logo.png with the new file.
+import BrandText from './BrandText'
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg'
   className?: string
 }
 
-const sizes = {
-  sm: { w: 100, h: 40 },
-  md: { w: 140, h: 56 },
-  lg: { w: 200, h: 80 },
+const imgSizes = {
+  sm: 36,
+  md: 48,
+  lg: 64,
 }
 
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
-  const { w, h } = sizes[size]
+  const imgW = imgSizes[size]
 
   return (
-    <div className={`flex items-center ${className}`}>
+    <div className={`flex items-center gap-2 ${className}`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/logo.png?v=2`}
+        src="/logo.png?v=2"
         alt="Flowers for Fighters"
-        width={w}
-        style={{ height: 'auto', objectFit: 'contain' }}
+        width={imgW}
+        style={{ height: 'auto', objectFit: 'contain', flexShrink: 0 }}
       />
+      <BrandText variant="flowers" />
     </div>
   )
 }
