@@ -23,7 +23,6 @@ export default function ImpactPage() {
   const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
-  const [generatingPdf, setGeneratingPdf] = useState(false)
   const [generatingCard, setGeneratingCard] = useState(false)
   const shareCardRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -87,27 +86,32 @@ export default function ImpactPage() {
     ? Math.min(100, (totalNotes / nextBadge.threshold) * 100)
     : 100
 
-  async function downloadHoursLetter() {
-    setGeneratingPdf(true)
-    try {
-      const res = await fetch('/api/export/hours-letter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: profile?.name, notes: totalNotes, minutes: totalMinutes }),
-      })
-      if (!res.ok) throw new Error()
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'fff-volunteer-hours.pdf'
-      a.click()
-      URL.revokeObjectURL(url)
-    } catch {
-      alert('Error generating letter — please try again.')
-    } finally {
-      setGeneratingPdf(false)
-    }
+  function requestHoursLetter() {
+    const name = profile?.name ?? 'Volunteer'
+    const startDate = notes.length > 0
+      ? new Date(notes[notes.length - 1].created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    const endDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    const hours = totalHours > 0 ? `${totalHours} hour${totalHours !== 1 ? 's' : ''}${remainingMinutes > 0 ? ` and ${remainingMinutes} minutes` : ''}` : `${remainingMinutes} minutes`
+
+    const subject = encodeURIComponent(`Volunteer Hours Letter Request — ${name}`)
+    const body = encodeURIComponent(
+`Hi Russell,
+
+I'd like to request a volunteer hours verification letter for my records. Here are my details:
+
+Name: ${name}
+Total notes written: ${totalNotes}
+Total service hours: ${hours}
+Service period: ${startDate} – ${endDate}
+Role: Note Writer — writing personalized encouragement notes for pediatric hospital patients through the Flowers for Fighters Note Writer program
+
+Please feel free to use these details to fill out the letterhead template. Thank you so much!
+
+– ${name}`
+    )
+
+    window.open(`mailto:joinflowersforfighters@gmail.com?subject=${subject}&body=${body}`)
   }
 
   async function shareImpact() {
@@ -291,11 +295,11 @@ export default function ImpactPage() {
             {generatingCard ? '...' : '📸 Share Impact'}
           </button>
           <button
-            onClick={downloadHoursLetter}
-            disabled={generatingPdf || totalNotes === 0}
+            onClick={requestHoursLetter}
+            disabled={totalNotes === 0}
             className="py-4 rounded-2xl bg-white text-charcoal font-body font-bold text-sm border border-cream-dark disabled:opacity-40"
           >
-            {generatingPdf ? '...' : '📄 Hours Letter'}
+            📬 Request Letter
           </button>
         </div>
 
