@@ -1,23 +1,14 @@
-// BrandText — renders "Flowers for Fighters" or "Notes for Fighters" with
-// drop-cap-style inline sizing in Dancing Script Bold.
-// F/N (first word): 38px  |  f (for): 28px  |  F (Fighters): 38px  |  rest: 22px
+// BrandText — renders "Flowers for Fighters" or "Notes for Fighters"
+// in Dancing Script Bold, matching the printed note card header exactly.
+// Font: Dancing Script 700, 30px, #E8637A
 
 interface BrandTextProps {
   variant?: 'flowers' | 'notes'
   className?: string
 }
 
-function StyledWord({ word, firstSize, restSize }: { word: string; firstSize: number; restSize: number }) {
-  return (
-    <span style={{ display: 'inline', whiteSpace: 'nowrap' }}>
-      <span style={{ fontSize: firstSize, lineHeight: 1 }}>{word[0]}</span>
-      <span style={{ fontSize: restSize, lineHeight: 1 }}>{word.slice(1)}</span>
-    </span>
-  )
-}
-
 export default function BrandText({ variant = 'flowers', className = '' }: BrandTextProps) {
-  const firstName = variant === 'flowers' ? 'Flowers' : 'Notes'
+  const text = variant === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
 
   return (
     <span
@@ -25,15 +16,14 @@ export default function BrandText({ variant = 'flowers', className = '' }: Brand
       style={{
         fontFamily: '"Dancing Script", cursive',
         fontWeight: 700,
+        fontSize: 30,
         color: '#E8637A',
+        lineHeight: 1.1,
         display: 'inline',
+        whiteSpace: 'nowrap',
       }}
     >
-      <StyledWord word={firstName} firstSize={38} restSize={22} />
-      {' '}
-      <StyledWord word="for" firstSize={28} restSize={22} />
-      {' '}
-      <StyledWord word="Fighters" firstSize={38} restSize={22} />
+      {text}
     </span>
   )
 }

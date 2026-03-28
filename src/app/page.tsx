@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient, isDemoMode } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import Logo from '@/components/Logo'
-import BrandText from '@/components/BrandText'
+// BrandText removed — duplicate on landing page was deleted
 import Navigation from '@/components/Navigation'
 import AuthModal from '@/components/AuthModal'
 import ConfettiEffect from '@/components/ConfettiEffect'
@@ -290,9 +290,6 @@ export default function WritePage() {
             <Logo size="lg" className="justify-center mb-6" />
           </div>
 
-          <div className="mb-3 animate-fade-in-up stagger-2">
-            <BrandText variant="flowers" />
-          </div>
           <h1 className="font-display text-4xl font-bold text-charcoal leading-tight mb-4 animate-fade-in-up stagger-2">
             Write a note.
             <br />
@@ -327,6 +324,111 @@ export default function WritePage() {
           <p className="font-body text-xs text-charcoal/40 mt-4">
             Free • Earn 15 volunteer minutes per note
           </p>
+        </div>
+
+        {/* ── How It Works ── */}
+        <div className="px-6 pb-10 animate-fade-in-up">
+          <h2 className="font-display text-base font-semibold text-charcoal/50 text-center uppercase tracking-widest mb-6">
+            How it works
+          </h2>
+          <div className="flex items-start justify-between gap-2 max-w-sm mx-auto">
+            {[
+              { icon: '✏️', label: 'Write a note', sub: 'From anywhere in the world' },
+              { icon: '🖨️', label: 'We print it', sub: 'On a card tucked into a bouquet' },
+              { icon: '🌸', label: 'A Fighter receives it', sub: 'In a pediatric hospital room' },
+            ].map((step, i, arr) => (
+              <div key={step.label} className="flex items-start gap-1 flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <span className="text-2xl mb-2">{step.icon}</span>
+                  <p className="font-body font-bold text-charcoal text-xs text-center leading-tight mb-1">{step.label}</p>
+                  <p className="font-body text-charcoal/40 text-xs text-center leading-tight">{step.sub}</p>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="text-charcoal/20 font-body text-lg mt-2 flex-shrink-0">→</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Example Card Preview ── */}
+        <div className="px-6 pb-12 animate-fade-in-up">
+          <h2 className="font-display text-base font-semibold text-charcoal/50 text-center uppercase tracking-widest mb-5">
+            What your note looks like 🌸
+          </h2>
+
+          {/* Card preview — mirrors the real printed card styling */}
+          <div
+            className="relative mx-auto max-w-xs rounded-xl overflow-hidden"
+            style={{ background: '#fff', boxShadow: '0 8px 32px rgba(26,26,46,0.13), 0 1.5px 6px rgba(232,99,122,0.08)', border: '1.5px solid #F9DDE0' }}
+          >
+            {/* EXAMPLE watermark */}
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', pointerEvents: 'none', zIndex: 10,
+                transform: 'rotate(-32deg)',
+                fontFamily: '"Playfair Display", Georgia, serif',
+                fontStyle: 'italic', fontSize: 44, fontWeight: 700,
+                color: 'rgba(26,26,46,0.055)', letterSpacing: 6, userSelect: 'none',
+              }}
+            >
+              EXAMPLE
+            </div>
+
+            <div style={{ padding: '28px 28px 22px 28px' }}>
+              {/* Header */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 26, color: '#E8637A', lineHeight: 1.1, marginBottom: 3 }}>
+                  Notes for Fighters
+                </div>
+                <div style={{ fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#aaaaaa', marginBottom: 10 }}>
+                  A note for you, Fighter 🌸
+                </div>
+                <div style={{ width: '100%', height: 1, background: '#F9DDE0' }} />
+              </div>
+
+              {/* Note body */}
+              <div style={{ padding: '14px 0 18px 0' }}>
+                <p style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: 13, lineHeight: 1.85, color: '#1A1A2E' }}>
+                  Hey Fighter — a stranger from across the world is rooting for you today. You are so much stronger than you know. Keep going. 🌸
+                </p>
+              </div>
+
+              {/* Footer row */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
+                <div>
+                  <div style={{ fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#E8637A', marginBottom: 3 }}>
+                    — Jamie, Notes for Fighters Volunteer
+                  </div>
+                  <div style={{ fontFamily: 'sans-serif', fontSize: 9, color: '#cccccc' }}>
+                    notesforfighters.vercel.app
+                  </div>
+                </div>
+                {/* Tiny QR placeholder */}
+                <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <div style={{ width: 46, height: 46, background: '#f0f0f0', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                      <rect x="2" y="2" width="14" height="14" rx="1.5" fill="#1A1A2E" opacity=".15"/>
+                      <rect x="5" y="5" width="8" height="8" rx=".5" fill="#1A1A2E" opacity=".3"/>
+                      <rect x="20" y="2" width="14" height="14" rx="1.5" fill="#1A1A2E" opacity=".15"/>
+                      <rect x="23" y="5" width="8" height="8" rx=".5" fill="#1A1A2E" opacity=".3"/>
+                      <rect x="2" y="20" width="14" height="14" rx="1.5" fill="#1A1A2E" opacity=".15"/>
+                      <rect x="5" y="23" width="8" height="8" rx=".5" fill="#1A1A2E" opacity=".3"/>
+                      <rect x="20" y="20" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                      <rect x="26" y="20" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                      <rect x="20" y="26" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                      <rect x="30" y="26" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                      <rect x="30" y="20" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                      <rect x="26" y="30" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontFamily: 'sans-serif', fontSize: 8, color: '#aaa' }}>Scan me 🌸</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
