@@ -12,50 +12,52 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
   return user
 }
 
-// Build HTML for the print PDF — each note as a 4x6 card, one page per note
+// Build HTML for the print PDF
+// Layout: 8.5×11" letter paper, 0.25" margins, 2 portrait 4×6" cards per page (side by side)
+// Each card has a dashed cut border. Cards grouped in pairs — one .sheet per page.
 async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 'flowers' | 'notes'): Promise<string> {
-  const title    = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
-  const orgName  = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
+  const title     = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
+  const orgName   = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'
   const footerUrl = branding === 'flowers' ? 'flowersforfighters.base44.app' : 'notesforfighters.vercel.app'
 
-  // QR code as base64 PNG so it renders offline / in print dialogs
+  // QR code — small, sharp, base64 so it prints offline
   const qrDataUrl = await QRCode.toDataURL('https://notesforfighters.vercel.app/for-you', {
-    width: 80,
+    width: 120,
     margin: 1,
     color: { dark: '#1A1A2E', light: '#FFFFFF' },
   })
 
-  const cards = notes.map((note) => `
+  // Build individual card HTML
+  const cardHtml = (note: Note) => `
     <div class="card">
-
-      <!-- HEADER -->
       <div class="header">
         <div class="org-name">${escapeHtml(orgName)}</div>
         <div class="subheader">A note for you, Fighter 🌸</div>
         <div class="divider"></div>
       </div>
-
-      <!-- BODY — grows to fill available space -->
       <div class="body-wrap">
         <div class="note-body">${escapeHtml(note.body)}</div>
       </div>
-
-      <!-- FOOTER ROW — signature left, QR right -->
       <div class="footer-row">
         <div class="footer-left">
           <div class="signature">&#8212;&nbsp;${escapeHtml(note.author_name?.split(' ')[0] ?? 'A volunteer')}, Notes for Fighters Volunteer</div>
           <div class="footer-url">${escapeHtml(footerUrl)}</div>
         </div>
         <div class="qr-wrap">
-          <img src="${qrDataUrl}" class="qr-code" alt="Scan me" />
+          <img src="${qrDataUrl}" class="qr-code" alt="QR code" />
           <div class="qr-label">Scan me 🌸</div>
         </div>
       </div>
+    </div>`
 
-    </div>
-  `).join('')
+  // Group notes into pairs → one .sheet per pair
+  const sheets: string[] = []
+  for (let i = 0; i < notes.length; i += 2) {
+    const left  = cardHtml(notes[i])
+    const right = notes[i + 1] ? cardHtml(notes[i + 1]) : '<div class="card card-blank"></div>'
+    sheets.push(`<div class="sheet">${left}${right}</div>`)
+  }
 
-  // Google Fonts loaded via <link> — more reliable than @import for print
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,54 +67,70 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <style>
-    /* ── Reset ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Page setup ── */
+    /* ── Letter page: 8.5×11 in, 0.25 in margins ── */
     @page {
-      size: 6in 4in;
-      margin: 0;
+      size: 8.5in 11in;
+      margin: 0.25in;
     }
 
     html, body {
-      width: 6in;
+      width: 8.5in;
       background: #fff;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
 
-    /* ── Card ── */
-    .card {
-      width: 6in;
-      height: 4in;
-      background: #FFFFFF;
-      padding: 48px;
+    /* ── Sheet: holds exactly 2 cards side by side ── */
+    .sheet {
+      width: 8in;          /* 8.5in − 2×0.25in margin */
+      height: 6in;         /* one row of portrait 4×6 cards */
       display: flex;
-      flex-direction: column;
-      page-break-after: always;
+      flex-direction: row;
       break-after: page;
+      page-break-after: always;
       overflow: hidden;
-      position: relative;
+    }
+    .sheet:last-child {
+      break-after: auto;
+      page-break-after: auto;
     }
 
+    /* ── Card: portrait 4×6 in with dashed cut border ── */
+    .card {
+      width: 4in;
+      height: 6in;
+      background: #FFFFFF;
+      padding: 0.35in 0.35in 0.3in 0.35in;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1.5px dashed #cccccc;
+      flex-shrink: 0;
+    }
+
+    /* Blank placeholder for odd-note pages */
+    .card-blank { background: #fff; }
+
     /* ── Header ── */
-    .header { flex-shrink: 0; margin-bottom: 14px; }
+    .header { flex-shrink: 0; margin-bottom: 10px; }
 
     .org-name {
       font-family: 'Dancing Script', cursive;
       font-weight: 700;
-      font-size: 36px;
+      font-size: 30px;
       color: #E8637A;
-      line-height: 1.1;
-      margin-bottom: 4px;
+      line-height: 1.15;
+      margin-bottom: 3px;
     }
 
     .subheader {
       font-family: 'Playfair Display', Georgia, serif;
       font-style: italic;
-      font-size: 12px;
+      font-size: 10.5px;
       color: #aaaaaa;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .divider {
@@ -126,46 +144,41 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       flex: 1;
       display: flex;
       align-items: center;
-      padding: 18px 0;
+      padding: 14px 0;
       overflow: hidden;
     }
 
     .note-body {
       font-family: 'Playfair Display', Georgia, serif;
-      font-weight: 400;
-      font-style: normal;
-      font-size: 15px;
-      line-height: 2.0;
+      font-size: 13px;
+      line-height: 1.9;
       color: #1A1A2E;
       white-space: pre-wrap;
       word-break: break-word;
+      width: 100%;
     }
 
-    /* ── Footer row ── */
+    /* ── Footer ── */
     .footer-row {
       flex-shrink: 0;
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
     }
 
-    .footer-left {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+    .footer-left { display: flex; flex-direction: column; gap: 3px; }
 
     .signature {
       font-family: 'Playfair Display', Georgia, serif;
       font-style: italic;
-      font-size: 13px;
+      font-size: 11px;
       color: #E8637A;
     }
 
     .footer-url {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 10px;
+      font-size: 9px;
       color: #cccccc;
     }
 
@@ -174,44 +187,38 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 2px;
       flex-shrink: 0;
     }
 
-    .qr-code {
-      width: 60px;
-      height: 60px;
-      display: block;
-    }
+    .qr-code { width: 54px; height: 54px; display: block; }
 
     .qr-label {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 8px;
+      font-size: 7.5px;
       color: #aaaaaa;
       text-align: center;
     }
 
     @media print {
       html, body { background: #fff; }
-      .card { margin: 0; }
     }
   </style>
 </head>
 <body>
-${cards}
+${sheets.join('\n')}
 <script>
-  // Auto-scale note body font down (min 11px) if text overflows the card
+  // Auto-scale note body font down (min 10px) if text overflows within body-wrap
   function fitNotes() {
     document.querySelectorAll('.body-wrap').forEach(function(wrap) {
       var body = wrap.querySelector('.note-body');
       if (!body) return;
-      var size = 15;
+      var size = 13;
       body.style.fontSize = size + 'px';
-      while (wrap.scrollHeight > wrap.clientHeight && size > 11) {
+      while (wrap.scrollHeight > wrap.clientHeight && size > 10) {
         size -= 0.5;
         body.style.fontSize = size + 'px';
       }
-      // Hard clamp — never let text bleed out
       if (wrap.scrollHeight > wrap.clientHeight) {
         body.style.overflow = 'hidden';
         wrap.style.overflow = 'hidden';
@@ -223,7 +230,6 @@ ${cards}
   } else {
     fitNotes();
   }
-  // Also run just before printing in case layout shifted
   window.addEventListener('beforeprint', fitNotes);
 </script>
 </body>
