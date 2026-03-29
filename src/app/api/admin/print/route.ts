@@ -32,7 +32,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     <div class="card">
       <div class="header">
         <div class="org-name">${escapeHtml(orgName)}</div>
-        <div class="subheader">A note for you, Fighter 🌸</div>
+        <div class="subheader">A note for you, Fighter 🌷</div>
         <div class="divider"></div>
       </div>
       <div class="body-wrap">
@@ -45,7 +45,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
         </div>
         <div class="qr-wrap">
           <img src="${qrDataUrl}" class="qr-code" alt="QR code" />
-          <div class="qr-label">Scan me 🌸</div>
+          <div class="qr-label">Scan me 🌷</div>
         </div>
       </div>
     </div>`

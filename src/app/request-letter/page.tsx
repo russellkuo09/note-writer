@@ -8,7 +8,7 @@ const steps = [
     number: '1',
     title: 'Go to My Impact',
     description: 'Head to the My Impact tab at the bottom of the screen.',
-    icon: '🌸',
+    icon: '🌷',
   },
   {
     number: '2',
@@ -102,7 +102,7 @@ export default function RequestLetterPage() {
             joinflowersforfighters@gmail.com
           </a>
           <p className="font-body text-xs text-charcoal/40 mt-2">
-            We typically respond within 2–3 business days 🌸
+            We typically respond within 2–3 business days 🌷
           </p>
         </div>
 
@@ -112,7 +112,7 @@ export default function RequestLetterPage() {
           className="w-full py-4 rounded-2xl bg-primary text-white font-body font-bold text-base"
           style={{ boxShadow: '0 4px 24px rgba(232, 99, 122, 0.35)' }}
         >
-          Go to My Impact 🌸
+          Go to My Impact 🌷
         </button>
 
       </div>

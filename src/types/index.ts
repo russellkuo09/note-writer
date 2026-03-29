@@ -19,7 +19,7 @@ export const PATIENT_PROMPTS: Record<PatientPrompt, string> = {
   surgery: 'A child recovering from surgery',
   teenager: "A teenager who's been here for weeks",
   animals: 'A little one who loves animals',
-  surprise: 'Surprise me 🌸',
+  surprise: 'Surprise me 🌷',
 }
 
 export type NoteStatus = 'queued' | 'printed' | 'archived'
@@ -74,7 +74,7 @@ export const BADGES = [
   {
     id: 'bouquet_builder',
     name: 'Bouquet Builder',
-    icon: '🌸',
+    icon: '🌷',
     description: 'Wrote 10 notes',
     threshold: 10,
     type: 'notes' as const,

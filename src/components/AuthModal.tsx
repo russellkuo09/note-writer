@@ -14,6 +14,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [location, setLocation] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -44,6 +45,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             name,
             email,
             role: 'supporter',
+            ...(location.trim() ? { location: location.trim() } : {}),
           })
         }
 
@@ -69,7 +71,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     return (
       <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
         <div className="bg-white rounded-3xl p-8 w-full max-w-sm text-center animate-fade-in-up">
-          <div className="text-5xl mb-4">🌸</div>
+          <div className="text-5xl mb-4">🌷</div>
           <h2 className="font-display text-2xl font-semibold text-charcoal mb-3">
             Check your email
           </h2>
@@ -131,6 +133,20 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
           <div>
             <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
+              Where are you writing from?
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value.slice(0, 100))}
+              placeholder="e.g. Los Angeles, CA"
+              className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">Helps us show our reach 🌷</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
               Email
             </label>
             <input
@@ -167,7 +183,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             {loading
               ? '...'
               : mode === 'signup'
-              ? 'Start writing notes 🌸'
+              ? 'Start writing notes 🌷'
               : 'Log in'}
           </button>
         </form>

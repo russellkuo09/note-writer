@@ -17,7 +17,7 @@ const DRAFT_KEY = 'fff-note-draft'
 const REF_CODE_KEY = 'fff-ref-code'
 
 const PLACEHOLDER =
-  "Hey Fighter — I don't know your name, but I want you to know someone out here is rooting for you. You've got this. 🌸"
+  "Hey Fighter — I don't know your name, but I want you to know someone out here is rooting for you. You've got this. 🌷"
 
 type AiState = 'idle' | 'loading' | 'done' | 'error'
 
@@ -43,6 +43,7 @@ export default function WritePage() {
   const [aiState, setAiState] = useState<AiState>('idle')
   const [polished, setPolished] = useState<PolishedResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [globalNoteCount, setGlobalNoteCount] = useState<number | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccess | null>(null)
   const [noteCount, setNoteCount] = useState(0)
@@ -66,6 +67,24 @@ export default function WritePage() {
     if (ref) {
       localStorage.setItem(REF_CODE_KEY, ref)
     }
+  }, [])
+
+  // Live global note count (public — shown on landing page)
+  useEffect(() => {
+    async function fetchCount() {
+      if (isDemoMode()) { setGlobalNoteCount(12); return }
+      try {
+        const supabase = createClient()
+        const { count } = await supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['queued', 'printed'])
+        setGlobalNoteCount(count ?? 0)
+      } catch { setGlobalNoteCount(0) }
+    }
+    fetchCount()
+    const interval = setInterval(fetchCount, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   // Auth state — in demo mode, auto-login as demo user
@@ -258,7 +277,7 @@ export default function WritePage() {
   }
 
   async function handleCopyCaption() {
-    const caption = "I just wrote a note for a pediatric patient fighter 🌸 Anyone can do it — write yours at notesforfighters.vercel.app #NotesForFighters #FlowersForFighters"
+    const caption = "I just wrote a note for a pediatric patient fighter 🌷 Anyone can do it — write yours at notesforfighters.vercel.app #NotesForFighters #FlowersForFighters"
     try {
       await navigator.clipboard.writeText(caption)
       setCaptionCopied(true)
@@ -294,7 +313,7 @@ export default function WritePage() {
             Write a note.
             <br />
             <span className="text-primary">Brighten a Fighter&rsquo;s day.</span>
-            <span className="ml-2">🌸</span>
+            <span className="ml-2">🌷</span>
           </h1>
 
           <p className="font-body text-charcoal/70 text-lg leading-relaxed max-w-sm mb-2 animate-fade-in-up stagger-3">
@@ -313,12 +332,21 @@ export default function WritePage() {
             </span>
           </div>
 
+          {/* Live note counter */}
+          <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
+            {globalNoteCount === null
+              ? ''
+              : globalNoteCount === 0
+              ? 'Be the first to write a note for a Fighter 🌷'
+              : `🌷 ${globalNoteCount.toLocaleString()} note${globalNoteCount === 1 ? '' : 's'} written for Fighters so far`}
+          </p>
+
           <button
             onClick={() => setShowAuth(true)}
             className="w-full max-w-xs py-4 rounded-2xl bg-primary text-white font-body font-bold text-lg transition-all active:scale-95 animate-fade-in-up stagger-5"
             style={{ boxShadow: '0 4px 24px rgba(232, 99, 122, 0.4)' }}
           >
-            Start Writing 🌸
+            Start Writing 🌷
           </button>
 
           <p className="font-body text-xs text-charcoal/40 mt-4">
@@ -335,7 +363,7 @@ export default function WritePage() {
             {[
               { icon: '✏️', label: 'Write a note', sub: 'From anywhere in the world' },
               { icon: '🖨️', label: 'We print it', sub: 'On a card tucked into a bouquet' },
-              { icon: '🌸', label: 'A Fighter receives it', sub: 'In a pediatric hospital room' },
+              { icon: '🌷', label: 'A Fighter receives it', sub: 'In a pediatric hospital room' },
             ].map((step, i, arr) => (
               <div key={step.label} className="flex items-start gap-1 flex-1">
                 <div className="flex flex-col items-center flex-1">
@@ -354,7 +382,7 @@ export default function WritePage() {
         {/* ── Example Card Preview ── */}
         <div className="px-6 pb-12 animate-fade-in-up">
           <h2 className="font-display text-base font-semibold text-charcoal/50 text-center uppercase tracking-widest mb-5">
-            What your note looks like 🌸
+            What your note looks like 🌷
           </h2>
 
           {/* Card preview — mirrors the real printed card styling */}
@@ -384,7 +412,7 @@ export default function WritePage() {
                   Notes for Fighters
                 </div>
                 <div style={{ fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#aaaaaa', marginBottom: 10 }}>
-                  A note for you, Fighter 🌸
+                  A note for you, Fighter 🌷
                 </div>
                 <div style={{ width: '100%', height: 1, background: '#F9DDE0' }} />
               </div>
@@ -392,7 +420,7 @@ export default function WritePage() {
               {/* Note body */}
               <div style={{ padding: '14px 0 18px 0' }}>
                 <p style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: 13, lineHeight: 1.85, color: '#1A1A2E' }}>
-                  Hey Fighter — a stranger from across the world is rooting for you today. You are so much stronger than you know. Keep going. 🌸
+                  Hey Fighter — a stranger from across the world is rooting for you today. You are so much stronger than you know. Keep going. 🌷
                 </p>
               </div>
 
@@ -424,7 +452,7 @@ export default function WritePage() {
                       <rect x="26" y="30" width="4" height="4" rx=".5" fill="#1A1A2E" opacity=".2"/>
                     </svg>
                   </div>
-                  <span style={{ fontFamily: 'sans-serif', fontSize: 8, color: '#aaa' }}>Scan me 🌸</span>
+                  <span style={{ fontFamily: 'sans-serif', fontSize: 8, color: '#aaa' }}>Scan me 🌷</span>
                 </div>
               </div>
             </div>
@@ -474,14 +502,14 @@ export default function WritePage() {
           <div className="bg-sage/10 border border-sage/30 rounded-2xl p-4 animate-fade-in-up">
             <p className="font-body font-semibold text-sage text-sm">
               {submitSuccess.dedication
-                ? `Your note — dedicated to ${submitSuccess.dedication} — is on its way to a Fighter. 🌸`
-                : `Your note is queued for ${submitSuccess.hospital}. You've earned ${submitSuccess.minutes} volunteer minutes. 🌸`}
+                ? `Your note — dedicated to ${submitSuccess.dedication} — is on its way to a Fighter. 🌷`
+                : `Your note is queued for ${submitSuccess.hospital}. You've earned ${submitSuccess.minutes} volunteer minutes. 🌷`}
             </p>
             {/* Streak message */}
             <p className="font-body text-sm text-charcoal/70 mt-1">
               {submitSuccess.new_streak > 1
                 ? `🔥 ${submitSuccess.new_streak} day streak! Come back tomorrow to keep it going.`
-                : '🌸 Day 1 — come back tomorrow to start a streak!'}
+                : '🌷 Day 1 — come back tomorrow to start a streak!'}
             </p>
             <p className="font-body text-xs text-charcoal/50 italic mt-1">
               Signed as: — {profile?.name?.split(' ')[0] ?? 'You'}, Notes for Fighters Volunteer
@@ -498,7 +526,7 @@ export default function WritePage() {
         {/* Share your note card */}
         {showShareCard && submitSuccess && (
           <div className="bg-white border border-cream-dark rounded-2xl p-4 animate-fade-in-up">
-            <p className="font-body font-semibold text-charcoal text-sm mb-3">Share Your Note 🌸</p>
+            <p className="font-body font-semibold text-charcoal text-sm mb-3">Share Your Note 🌷</p>
             <div className="flex gap-2">
               <button
                 onClick={handleDownloadShareCard}
@@ -525,10 +553,10 @@ export default function WritePage() {
           aria-hidden="true"
         >
           {/* Corner flowers */}
-          <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 28 }}>🌸</span>
-          <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 28 }}>🌸</span>
-          <span style={{ position: 'absolute', bottom: 48, left: 12, fontSize: 28 }}>🌸</span>
-          <span style={{ position: 'absolute', bottom: 48, right: 12, fontSize: 28 }}>🌸</span>
+          <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 28 }}>🌷</span>
+          <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 28 }}>🌷</span>
+          <span style={{ position: 'absolute', bottom: 48, left: 12, fontSize: 28 }}>🌷</span>
+          <span style={{ position: 'absolute', bottom: 48, right: 12, fontSize: 28 }}>🌷</span>
           {/* Header */}
           <div style={{ paddingTop: 24, textAlign: 'center' }}>
             <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, color: '#E8637A', lineHeight: 1 }}>
@@ -558,7 +586,7 @@ export default function WritePage() {
         {/* Greeting */}
         <div className="animate-fade-in-up">
           <h2 className="font-display text-2xl font-semibold text-charcoal">
-            Hey {profile?.name?.split(' ')[0] ?? 'there'} 🌸
+            Hey {profile?.name?.split(' ')[0] ?? 'there'} 🌷
           </h2>
           <p className="font-body text-charcoal/60 text-sm mt-1">
             Write something kind for a Fighter today.
@@ -581,7 +609,7 @@ export default function WritePage() {
                     : 'bg-white text-charcoal/70 border-cream-dark hover:border-primary/40'
                 }`}
               >
-                {h === 'surprise' ? 'Surprise Me 🌸' : HOSPITALS[h]}
+                {h === 'surprise' ? 'Surprise Me 🌷' : HOSPITALS[h]}
               </button>
             ))}
           </div>
@@ -682,7 +710,7 @@ export default function WritePage() {
 
           {/* Print tip */}
           <p className="text-xs font-body text-charcoal/30 mt-1 ml-1">
-            Shorter notes print better on cards 🌸
+            Shorter notes print better on cards 🌷
           </p>
         </div>
 
@@ -743,7 +771,7 @@ export default function WritePage() {
             className="w-full py-4 rounded-2xl bg-primary text-white font-body font-bold text-lg transition-all active:scale-95 disabled:opacity-40"
             style={charOk ? { boxShadow: '0 4px 24px rgba(232, 99, 122, 0.35)' } : {}}
           >
-            {submitting ? 'Sending...' : 'Send to a Fighter 🌸'}
+            {submitting ? 'Sending...' : 'Send to a Fighter 🌷'}
           </button>
           {!user && (
             <p className="text-xs text-center font-body text-charcoal/40 mt-2">

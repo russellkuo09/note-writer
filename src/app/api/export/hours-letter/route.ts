@@ -92,7 +92,7 @@ function buildLetterHtml(name: string, notes: number, minutes: number, date: str
 </head>
 <body>
   <div class="header">
-    <div class="flower-icon">🌸</div>
+    <div class="flower-icon">🌷</div>
     <div>
       <div class="org-name">Flowers for Fighters</div>
       <div class="org-tagline">Diamond Bar, California &nbsp;·&nbsp; flowersforfighters.base44.app</div>

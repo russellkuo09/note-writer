@@ -12,7 +12,7 @@ export default function Navigation({ isAdmin = false }: NavigationProps) {
 
   const tabs = [
     { href: '/', label: 'Write', icon: '✏️' },
-    { href: '/impact', label: 'My Impact', icon: '🌸' },
+    { href: '/impact', label: 'My Impact', icon: '🌷' },
     ...(isAdmin ? [{ href: '/admin', label: 'Queue', icon: '📋' }] : []),
   ]
 

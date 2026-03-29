@@ -43,7 +43,7 @@ export default function ForYouPage() {
             marginRight: -24,
           }}
         >
-          <div style={{ fontSize: 64, marginBottom: 20, lineHeight: 1 }}>🌸</div>
+          <div style={{ fontSize: 64, marginBottom: 20, lineHeight: 1 }}>🌷</div>
           <h1
             style={{
               fontFamily: 'Playfair Display, Georgia, serif',
@@ -144,7 +144,7 @@ export default function ForYouPage() {
             &ldquo;Keep fighting. You are braver than you know, and stronger than you feel. We are rooting for you.&rdquo;
           </p>
           <p style={{ fontSize: 13, color: '#E8637A', fontWeight: 600, marginTop: 12 }}>
-            — Flowers for Fighters Volunteers 🌸
+            — Flowers for Fighters Volunteers 🌷
           </p>
         </div>
 
@@ -169,7 +169,7 @@ export default function ForYouPage() {
               boxShadow: '0 4px 24px rgba(232, 99, 122, 0.35)',
             }}
           >
-            Write a Note for a Fighter 🌸
+            Write a Note for a Fighter 🌷
           </a>
         </div>
 

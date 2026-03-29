@@ -7,7 +7,7 @@ When generating a note from scratch based on a patient prompt:
 - Write as if you are a caring person writing to that specific patient type
 - Make it feel personal and handwritten, never generic
 - Keep it warm, brief, and powerful
-- End with: "Keep fighting. We're rooting for you. 🌸"
+- End with: "Keep fighting. We're rooting for you. 🌷"
 
 Never mention AI, technology, or this app in the note itself.`
 

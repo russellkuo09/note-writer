@@ -13,9 +13,9 @@ import type { Note, Hospital } from '@/types'
 
 // ── Demo data ─────────────────────────────────────────────────────────────
 const DEMO_NOTES: Note[] = [
-  { id: '1', author_id: 'demo', author_name: 'Demo', hospital: 'shriners', patient_prompt: 'surgery', body: "Hey Fighter — I don't know your name but I want you to know someone out here is rooting for you. Keep fighting. 🌸", status: 'printed', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), printed_at: null, dedication: null },
+  { id: '1', author_id: 'demo', author_name: 'Demo', hospital: 'shriners', patient_prompt: 'surgery', body: "Hey Fighter — I don't know your name but I want you to know someone out here is rooting for you. Keep fighting. 🌷", status: 'printed', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), printed_at: null, dedication: null },
   { id: '2', author_id: 'demo', author_name: 'Demo', hospital: 'whittier', patient_prompt: 'teenager', body: "You are braver than you know. Keep going — there are people you've never met cheering for you every single day.", status: 'queued', created_at: new Date(Date.now() - 86400000).toISOString(), printed_at: null, dedication: 'my grandpa' },
-  { id: '3', author_id: 'demo', author_name: 'Demo', hospital: 'healthbridge', patient_prompt: 'animals', body: "I heard you love animals. Did you know even the most determined little critters never give up? Just like you. 🌸", status: 'queued', created_at: new Date().toISOString(), printed_at: null, dedication: null },
+  { id: '3', author_id: 'demo', author_name: 'Demo', hospital: 'healthbridge', patient_prompt: 'animals', body: "I heard you love animals. Did you know even the most determined little critters never give up? Just like you. 🌷", status: 'queued', created_at: new Date().toISOString(), printed_at: null, dedication: null },
 ]
 
 interface ProfileData {
@@ -153,7 +153,7 @@ export default function ImpactPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <span className="text-4xl animate-pulse-soft">🌸</span>
+        <span className="text-4xl animate-pulse-soft">🌷</span>
       </div>
     )
   }
@@ -173,7 +173,7 @@ export default function ImpactPage() {
         {!referralBannerDismissed && referralBonusMinutes > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 animate-fade-in-up flex items-start justify-between gap-3">
             <p className="font-body text-sm text-green-700">
-              Your friend just wrote their first note! You&apos;ve earned 30 bonus volunteer minutes 🌸
+              Your friend just wrote their first note! You&apos;ve earned 30 bonus volunteer minutes 🌷
             </p>
             <button onClick={() => setReferralBannerDismissed(true)} className="text-xs text-green-400 shrink-0">Dismiss</button>
           </div>
@@ -185,7 +185,7 @@ export default function ImpactPage() {
           style={{ background: 'linear-gradient(135deg, #E8637A 0%, #F9DDE0 100%)' }}
         >
           <p className="font-body text-white/90 text-base font-semibold mb-1">
-            Hey {profile?.name?.split(' ')[0] ?? 'there'} 🌸
+            Hey {profile?.name?.split(' ')[0] ?? 'there'} 🌷
           </p>
           <p className="font-display text-6xl font-bold text-white mb-1">{totalNotes}</p>
           <p className="font-body text-white/90 text-base">
@@ -215,7 +215,7 @@ export default function ImpactPage() {
             <>
               <p className="font-display text-xl font-semibold text-charcoal/60 mb-1">No active streak</p>
               <p className="font-body text-sm text-charcoal/60">
-                Your streak ended — but every note counts. Start a new one today 🌸
+                Your streak ended — but every note counts. Start a new one today 🌷
               </p>
             </>
           )}
@@ -302,7 +302,7 @@ export default function ImpactPage() {
                     </p>
                     {n.dedication && (
                       <p className="font-body text-xs text-charcoal/50 italic mt-0.5">
-                        Dedicated to {n.dedication} 🌸
+                        Dedicated to {n.dedication} 🌷
                       </p>
                     )}
                     <p className="font-body text-xs text-charcoal/40 mt-0.5">
@@ -318,7 +318,7 @@ export default function ImpactPage() {
         {/* Referral card */}
         <div className="bg-white rounded-3xl border border-cream-dark p-5 animate-fade-in-up stagger-3">
           <p className="font-body text-xs font-semibold text-charcoal/50 uppercase tracking-wide mb-3">
-            Invite a Friend 🌸
+            Invite a Friend 🌷
           </p>
           {referralLink ? (
             <>
@@ -342,7 +342,7 @@ export default function ImpactPage() {
                 </div>
               </div>
               <p className="font-body text-xs text-charcoal/50 text-center">
-                Every friend you invite = more notes for more Fighters 🌸
+                Every friend you invite = more notes for more Fighters 🌷
               </p>
             </>
           ) : (
@@ -362,7 +362,7 @@ export default function ImpactPage() {
             {profile?.name ?? 'A volunteer'} has written
           </p>
           <p className="font-body text-charcoal/70 text-base">
-            {totalNotes === 1 ? 'note' : 'notes'} for Flowers for Fighters 🌸
+            {totalNotes === 1 ? 'note' : 'notes'} for Flowers for Fighters 🌷
           </p>
           <p className="font-body text-charcoal/50 text-sm mt-3">
             = {totalHours > 0 ? `${totalHours}h ` : ''}{remainingMinutes}m volunteer time
