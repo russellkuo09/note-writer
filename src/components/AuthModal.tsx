@@ -116,34 +116,35 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {mode === 'signup' && (
-            <div>
-              <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
-                Your name
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="First name"
-                required
-                className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
+                  Your name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="First name"
+                  required
+                  className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
+                  Where are you writing from? <span className="normal-case font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value.slice(0, 100))}
+                  placeholder="e.g. Los Angeles, CA"
+                  className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">Helps us show our reach 🌷</p>
+              </div>
+            </>
           )}
-
-          <div>
-            <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
-              Where are you writing from?
-            </label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value.slice(0, 100))}
-              placeholder="e.g. Los Angeles, CA"
-              className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-            <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">Helps us show our reach 🌷</p>
-          </div>
 
           <div>
             <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
