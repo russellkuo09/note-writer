@@ -379,25 +379,23 @@ export default function WritePage() {
           </div>
         </div>
 
-        {/* ── Live Stats Bar ── */}
-        {globalNoteCount !== null && volunteerCount !== null && (globalNoteCount > 0 || volunteerCount > 0) && (
-          <div className="px-6 pb-10 animate-fade-in-up">
-            <div className="flex gap-3 max-w-sm mx-auto">
-              <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
-                <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                  {(97 + globalNoteCount).toLocaleString()}+
-                </p>
-                <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
-              </div>
-              <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
-                <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                  {(10 + volunteerCount).toLocaleString()}+
-                </p>
-                <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">👤 volunteers worldwide</p>
-              </div>
+        {/* ── Live Stats Bar ── always visible, baselines ensure non-zero */}
+        <div className="px-6 pb-10 animate-fade-in-up">
+          <div className="flex gap-3 max-w-sm mx-auto">
+            <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
+              <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
+                {(97 + (globalNoteCount ?? 0)).toLocaleString()}+
+              </p>
+              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
+            </div>
+            <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
+              <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
+                {(10 + (volunteerCount ?? 0)).toLocaleString()}+
+              </p>
+              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">👤 volunteers worldwide</p>
             </div>
           </div>
-        )}
+        </div>
 
         {/* ── Example Card Preview ── */}
         <div className="px-6 pb-12 animate-fade-in-up">
