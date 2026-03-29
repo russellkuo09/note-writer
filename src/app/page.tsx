@@ -717,7 +717,7 @@ export default function WritePage() {
 
           {charCount > 0 && charCount < charMin && (
             <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">
-              Add a few more words — {charMin - charCount} more to go
+              {charMin - charCount} more character{charMin - charCount === 1 ? '' : 's'} to go
             </p>
           )}
 
