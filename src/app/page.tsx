@@ -44,6 +44,7 @@ export default function WritePage() {
   const [polished, setPolished] = useState<PolishedResult | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [globalNoteCount, setGlobalNoteCount] = useState<number | null>(null)
+  const [volunteerCount, setVolunteerCount] = useState<number | null>(null)
   const [showConfetti, setShowConfetti] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccess | null>(null)
   const [noteCount, setNoteCount] = useState(0)
@@ -69,21 +70,22 @@ export default function WritePage() {
     }
   }, [])
 
-  // Live global note count (public — shown on landing page)
+  // Live global stats (public — shown on landing page)
   useEffect(() => {
-    async function fetchCount() {
-      if (isDemoMode()) { setGlobalNoteCount(12); return }
+    async function fetchStats() {
+      if (isDemoMode()) { setGlobalNoteCount(12); setVolunteerCount(7); return }
       try {
         const supabase = createClient()
-        const { count } = await supabase
-          .from('notes')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['queued', 'printed'])
-        setGlobalNoteCount(count ?? 0)
-      } catch { setGlobalNoteCount(0) }
+        const [{ count: notes }, { count: volunteers }] = await Promise.all([
+          supabase.from('notes').select('*', { count: 'exact', head: true }).in('status', ['queued', 'printed']),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['supporter', 'volunteer']),
+        ])
+        setGlobalNoteCount(notes ?? 0)
+        setVolunteerCount(volunteers ?? 0)
+      } catch { setGlobalNoteCount(0); setVolunteerCount(0) }
     }
-    fetchCount()
-    const interval = setInterval(fetchCount, 30000)
+    fetchStats()
+    const interval = setInterval(fetchStats, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -378,6 +380,26 @@ export default function WritePage() {
             ))}
           </div>
         </div>
+
+        {/* ── Live Stats Bar ── */}
+        {globalNoteCount !== null && volunteerCount !== null && (globalNoteCount > 0 || volunteerCount > 0) && (
+          <div className="px-6 pb-10 animate-fade-in-up">
+            <div className="flex gap-3 max-w-sm mx-auto">
+              <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
+                <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
+                  {globalNoteCount.toLocaleString()}
+                </p>
+                <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
+              </div>
+              <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
+                <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
+                  {volunteerCount.toLocaleString()}
+                </p>
+                <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">👤 volunteers worldwide</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Example Card Preview ── */}
         <div className="px-6 pb-12 animate-fade-in-up">
