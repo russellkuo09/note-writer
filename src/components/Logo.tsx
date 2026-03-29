@@ -1,11 +1,15 @@
-// Logo component — shows the bouquet image + Dancing Script brand text.
+// Logo component — shows the bouquet image + optional Dancing Script brand text.
 // To swap the image: replace /public/logo.png.
 // To swap the text style: update BrandText.tsx.
+// Props:
+//   size     — 'sm' | 'md' | 'lg' | 'xl'  (controls image width)
+//   showText — false hides the brand name text (useful on the landing hero)
 
 import BrandText from './BrandText'
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
+  showText?: boolean
   className?: string
 }
 
@@ -13,9 +17,10 @@ const imgSizes = {
   sm: 36,
   md: 48,
   lg: 64,
+  xl: 110,
 }
 
-export default function Logo({ size = 'md', className = '' }: LogoProps) {
+export default function Logo({ size = 'md', showText = true, className = '' }: LogoProps) {
   const imgW = imgSizes[size]
 
   return (
@@ -27,7 +32,7 @@ export default function Logo({ size = 'md', className = '' }: LogoProps) {
         width={imgW}
         style={{ height: 'auto', objectFit: 'contain', flexShrink: 0 }}
       />
-      <BrandText variant="flowers" />
+      {showText && <BrandText variant="flowers" />}
     </div>
   )
 }

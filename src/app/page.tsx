@@ -287,7 +287,7 @@ export default function WritePage() {
         {/* Hero */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center">
           <div className="animate-fade-in-up stagger-1">
-            <Logo size="lg" className="justify-center mb-6" />
+            <Logo size="xl" showText={false} className="justify-center mb-6" />
           </div>
 
           <h1 className="font-display text-4xl font-bold text-charcoal leading-tight mb-4 animate-fade-in-up stagger-2">
