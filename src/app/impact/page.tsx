@@ -342,7 +342,7 @@ export default function ImpactPage() {
                 </div>
               </div>
               <p className="font-body text-xs text-charcoal/50 text-center">
-                Every friend you invite = more notes for more Fighters 🌷
+                Earn <span className="font-semibold text-primary">30 bonus minutes</span> every time a friend you invite writes their first note 🌷
               </p>
             </>
           ) : (
