@@ -338,9 +338,7 @@ export default function WritePage() {
           <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
             {globalNoteCount === null
               ? ''
-              : globalNoteCount === 0
-              ? 'Be the first to write a note for a Fighter 🌷'
-              : `🌷 ${globalNoteCount.toLocaleString()} note${globalNoteCount === 1 ? '' : 's'} written for Fighters so far`}
+              : `🌷 ${(90 + globalNoteCount).toLocaleString()}+ notes written for Fighters so far`}
           </p>
 
           <button
@@ -387,7 +385,7 @@ export default function WritePage() {
             <div className="flex gap-3 max-w-sm mx-auto">
               <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
                 <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                  {globalNoteCount.toLocaleString()}
+                  {(90 + globalNoteCount).toLocaleString()}+
                 </p>
                 <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
               </div>
