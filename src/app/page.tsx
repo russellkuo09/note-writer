@@ -78,7 +78,7 @@ export default function WritePage() {
         const supabase = createClient()
         const [{ count: notes }, { count: volunteers }] = await Promise.all([
           supabase.from('notes').select('*', { count: 'exact', head: true }).in('status', ['queued', 'printed']),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['supporter', 'volunteer']),
+          supabase.from('profiles').select('*', { count: 'exact', head: true }),
         ])
         setGlobalNoteCount(notes ?? 0)
         setVolunteerCount(volunteers ?? 0)
