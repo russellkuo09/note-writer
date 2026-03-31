@@ -76,12 +76,21 @@ export default function WritePage() {
       if (isDemoMode()) { setGlobalNoteCount(12); setVolunteerCount(7); return }
       try {
         const supabase = createClient()
-        const [{ count: notes }, { count: volunteers }] = await Promise.all([
-          supabase.from('notes').select('*', { count: 'exact', head: true }).in('status', ['queued', 'printed']),
-          supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        ])
+        // Notes: queued + printed only
+        const { count: notes } = await supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
+          .in('status', ['queued', 'printed'])
+
+        // Volunteers: distinct authors who have submitted at least one note
+        // (excludes admins/test accounts that never wrote anything)
+        const { data: authorRows } = await supabase
+          .from('notes')
+          .select('author_id')
+        const uniqueAuthors = new Set((authorRows ?? []).map((r: { author_id: string }) => r.author_id)).size
+
         setGlobalNoteCount(notes ?? 0)
-        setVolunteerCount(volunteers ?? 0)
+        setVolunteerCount(uniqueAuthors)
       } catch { setGlobalNoteCount(0); setVolunteerCount(0) }
     }
     fetchStats()
