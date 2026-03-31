@@ -119,16 +119,22 @@ export default function AdminPage() {
         }),
       })
       if (!res.ok) throw new Error()
-      const blob = await res.blob()
+      const html = await res.text()
+      // Open the HTML in a new tab — the page auto-calls window.print() after fonts load
+      const blob = new Blob([html], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `fff-notes-${targetHospital ?? 'all'}-${new Date().toISOString().slice(0, 10)}.html`
-      a.click()
-      URL.revokeObjectURL(url)
+      const tab = window.open(url, '_blank')
+      if (!tab) {
+        // Fallback if popup blocked: offer direct download
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `fff-notes-${targetHospital ?? 'all'}-${new Date().toISOString().slice(0, 10)}.html`
+        a.click()
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
       setConfirmPrint(true)
     } catch {
-      alert('Error generating PDF — please try again.')
+      alert('Error preparing cards — please try again.')
     } finally {
       setPrinting(false)
     }
@@ -329,7 +335,7 @@ export default function AdminPage() {
             className="w-full py-3.5 rounded-2xl bg-charcoal text-white font-body font-bold text-sm transition-all active:scale-95 disabled:opacity-60 animate-fade-in-up stagger-2"
           >
             {printing
-              ? '⏳ Generating PDF...'
+              ? '⏳ Preparing cards...'
               : `🖨️ Print Batch for ${activeTab === 'all' ? 'All Hospitals' : HOSPITALS[activeTab]} (${queuedCount(activeTab === 'all' ? undefined : activeTab)} notes)`}
           </button>
         )}

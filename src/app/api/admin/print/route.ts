@@ -225,10 +225,15 @@ ${sheets.join('\n')}
       }
     });
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', fitNotes);
-  } else {
+  function ready() {
     fitNotes();
+    // Short delay so Google Fonts finish loading before the print dialog opens
+    setTimeout(function() { window.print(); }, 800);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
   }
   window.addEventListener('beforeprint', fitNotes);
 </script>
