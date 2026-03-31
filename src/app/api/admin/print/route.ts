@@ -50,12 +50,14 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       </div>
     </div>`
 
-  // Group notes into pairs → one .sheet per pair
+  // Group notes into sets of 6 → one .sheet per page (2 cols × 3 rows)
   const sheets: string[] = []
-  for (let i = 0; i < notes.length; i += 2) {
-    const left  = cardHtml(notes[i])
-    const right = notes[i + 1] ? cardHtml(notes[i + 1]) : '<div class="card card-blank"></div>'
-    sheets.push(`<div class="sheet">${left}${right}</div>`)
+  for (let i = 0; i < notes.length; i += 6) {
+    const batch = notes.slice(i, i + 6)
+    // Pad to 6 so the grid stays full
+    while (batch.length < 6) batch.push(null as unknown as Note)
+    const cards = batch.map((n) => n ? cardHtml(n) : '<div class="card card-blank"></div>').join('')
+    sheets.push(`<div class="sheet">${cards}</div>`)
   }
 
   return `<!DOCTYPE html>
@@ -82,12 +84,13 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       print-color-adjust: exact;
     }
 
-    /* ── Sheet: holds exactly 2 landscape cards stacked vertically ── */
+    /* ── Sheet: 2-col × 3-row grid, 6 cards per page ── */
     .sheet {
       width: 8in;          /* 8.5in − 2×0.25in margin */
       height: 10.5in;      /* 11in − 2×0.25in margin */
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 4in 4in;
+      grid-template-rows: 3.5in 3.5in 3.5in;
       break-after: page;
       page-break-after: always;
       overflow: hidden;
@@ -97,17 +100,16 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       page-break-after: auto;
     }
 
-    /* ── Card: landscape 6×4 in with dashed cut border ── */
+    /* ── Card: 4×3.5 in with dashed cut border ── */
     .card {
-      width: 6in;
-      height: 4in;
+      width: 4in;
+      height: 3.5in;
       background: #FFFFFF;
-      padding: 0.3in 0.4in 0.25in 0.4in;
+      padding: 0.2in 0.25in 0.15in 0.25in;
       display: flex;
       flex-direction: column;
       overflow: hidden;
       border: 1.5px dashed #cccccc;
-      flex-shrink: 0;
     }
 
     /* Blank placeholder for odd-note pages */
@@ -119,18 +121,18 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     .org-name {
       font-family: 'Dancing Script', cursive;
       font-weight: 700;
-      font-size: 30px;
+      font-size: 22px;
       color: #E8637A;
       line-height: 1.15;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .subheader {
       font-family: 'Playfair Display', Georgia, serif;
       font-style: italic;
-      font-size: 10.5px;
+      font-size: 9px;
       color: #aaaaaa;
-      margin-bottom: 10px;
+      margin-bottom: 7px;
     }
 
     .divider {
@@ -150,8 +152,8 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
 
     .note-body {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 13px;
-      line-height: 1.9;
+      font-size: 11px;
+      line-height: 1.75;
       color: #1A1A2E;
       white-space: pre-wrap;
       word-break: break-word;
