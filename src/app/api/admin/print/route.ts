@@ -13,7 +13,7 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
 }
 
 // Build HTML for the print PDF
-// Layout: 8.5×11" letter paper, 0.25" margins, 2 portrait 4×6" cards per page (side by side)
+// Layout: 8.5×11" letter paper, 0.25" margins, 2 landscape 6×4" cards per page (stacked)
 // Each card has a dashed cut border. Cards grouped in pairs — one .sheet per page.
 async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 'flowers' | 'notes'): Promise<string> {
   const title     = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
@@ -82,12 +82,12 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       print-color-adjust: exact;
     }
 
-    /* ── Sheet: holds exactly 2 cards side by side ── */
+    /* ── Sheet: holds exactly 2 landscape cards stacked vertically ── */
     .sheet {
       width: 8in;          /* 8.5in − 2×0.25in margin */
-      height: 6in;         /* one row of portrait 4×6 cards */
+      height: 10.5in;      /* 11in − 2×0.25in margin */
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       break-after: page;
       page-break-after: always;
       overflow: hidden;
@@ -97,12 +97,12 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       page-break-after: auto;
     }
 
-    /* ── Card: portrait 4×6 in with dashed cut border ── */
+    /* ── Card: landscape 6×4 in with dashed cut border ── */
     .card {
-      width: 4in;
-      height: 6in;
+      width: 6in;
+      height: 4in;
       background: #FFFFFF;
-      padding: 0.35in 0.35in 0.3in 0.35in;
+      padding: 0.3in 0.4in 0.25in 0.4in;
       display: flex;
       flex-direction: column;
       overflow: hidden;
