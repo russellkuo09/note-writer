@@ -50,12 +50,12 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       </div>
     </div>`
 
-  // Group notes into sets of 6 → one .sheet per page (2 cols × 3 rows)
+  // Group notes into sets of 8 → one .sheet per page (2 cols × 4 rows)
   const sheets: string[] = []
-  for (let i = 0; i < notes.length; i += 6) {
-    const batch = notes.slice(i, i + 6)
-    // Pad to 6 so the grid stays full
-    while (batch.length < 6) batch.push(null as unknown as Note)
+  for (let i = 0; i < notes.length; i += 8) {
+    const batch = notes.slice(i, i + 8)
+    // Pad to 8 so the grid stays full
+    while (batch.length < 8) batch.push(null as unknown as Note)
     const cards = batch.map((n) => n ? cardHtml(n) : '<div class="card card-blank"></div>').join('')
     sheets.push(`<div class="sheet">${cards}</div>`)
   }
@@ -84,13 +84,13 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       print-color-adjust: exact;
     }
 
-    /* ── Sheet: 2-col × 3-row grid, 6 cards per page ── */
+    /* ── Sheet: 2-col × 4-row grid, 8 cards per page ── */
     .sheet {
       width: 8in;          /* 8.5in − 2×0.25in margin */
       height: 10.5in;      /* 11in − 2×0.25in margin */
       display: grid;
       grid-template-columns: 4in 4in;
-      grid-template-rows: 3.5in 3.5in 3.5in;
+      grid-template-rows: 2.625in 2.625in 2.625in 2.625in;
       break-after: page;
       page-break-after: always;
       overflow: hidden;
@@ -100,12 +100,12 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       page-break-after: auto;
     }
 
-    /* ── Card: 4×3.5 in with dashed cut border ── */
+    /* ── Card: 4×2.625 in with dashed cut border ── */
     .card {
       width: 4in;
-      height: 3.5in;
+      height: 2.625in;
       background: #FFFFFF;
-      padding: 0.2in 0.25in 0.15in 0.25in;
+      padding: 0.15in 0.2in 0.1in 0.2in;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -116,7 +116,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
     .card-blank { background: #fff; }
 
     /* ── Header ── */
-    .header { flex-shrink: 0; margin-bottom: 10px; }
+    .header { flex-shrink: 0; margin-bottom: 6px; }
 
     .org-name {
       font-family: 'Dancing Script', cursive;
@@ -146,7 +146,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       flex: 1;
       display: flex;
       align-items: center;
-      padding: 14px 0;
+      padding: 8px 0;
       overflow: hidden;
     }
 
@@ -193,7 +193,7 @@ async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 
       flex-shrink: 0;
     }
 
-    .qr-code { width: 54px; height: 54px; display: block; }
+    .qr-code { width: 44px; height: 44px; display: block; }
 
     .qr-label {
       font-family: 'Playfair Display', Georgia, serif;
