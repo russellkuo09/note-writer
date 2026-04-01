@@ -11,11 +11,11 @@ export async function GET() {
       .select('id', { count: 'exact', head: true })
       .in('status', ['queued', 'printed'])
 
-    // Volunteers: all profiles (service role bypasses RLS)
-    // Counts everyone who has created an account, regardless of role
+    // Volunteers: supporter + volunteer roles only (excludes admins)
     const { count: profileCount } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true })
+      .in('role', ['supporter', 'volunteer'])
 
     const total_notes = noteCount ?? 0
     const total_volunteers = profileCount ?? 0
