@@ -13,8 +13,8 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
 }
 
 // Build HTML for the print PDF
-// Layout: 8.5×11" letter paper, 0.25" margins, 2 landscape 6×4" cards per page (stacked)
-// Each card has a dashed cut border. Cards grouped in pairs — one .sheet per page.
+// Layout: 8.5×11" letter paper, 0.25" margins, 2-col × 4-row grid = 8 cards (4×2.625in) per page
+// Each card has a dashed cut border. Cards grouped in 8s — one .sheet per page.
 async function buildPrintHtml(notes: Note[], hospital: string | null, branding: 'flowers' | 'notes'): Promise<string> {
   const title     = hospital ? HOSPITALS[hospital as keyof typeof HOSPITALS] : 'All Hospitals'
   const orgName   = branding === 'flowers' ? 'Flowers for Fighters' : 'Notes for Fighters'

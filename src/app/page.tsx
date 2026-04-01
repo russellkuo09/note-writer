@@ -71,27 +71,23 @@ export default function WritePage() {
   }, [])
 
   // Live global stats (public — shown on landing page)
+  // Uses server-side API route so service role key bypasses RLS on profiles table.
   useEffect(() => {
     async function fetchStats() {
       if (isDemoMode()) { setGlobalNoteCount(12); setVolunteerCount(7); return }
       try {
-        const supabase = createClient()
-        // Notes: queued + printed only
-        const { count: notes } = await supabase
-          .from('notes')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['queued', 'printed'])
-
-        // Volunteers: distinct authors who have submitted at least one note
-        // (excludes admins/test accounts that never wrote anything)
-        const { data: authorRows } = await supabase
-          .from('notes')
-          .select('author_id')
-        const uniqueAuthors = new Set((authorRows ?? []).map((r: { author_id: string }) => r.author_id)).size
-
-        setGlobalNoteCount(notes ?? 0)
-        setVolunteerCount(uniqueAuthors)
-      } catch { setGlobalNoteCount(0); setVolunteerCount(0) }
+        const res = await fetch('/api/public/stats')
+        if (!res.ok) throw new Error(`Stats API returned ${res.status}`)
+        const data = await res.json() as { total_notes: number; total_volunteers: number }
+        console.log('[fetchStats] API response:', data)
+        console.log('[fetchStats] displaying notes:', 97 + data.total_notes, '  volunteers:', 10 + data.total_volunteers)
+        setGlobalNoteCount(data.total_notes ?? 0)
+        setVolunteerCount(data.total_volunteers ?? 0)
+      } catch (err) {
+        console.error('[fetchStats] failed, using 0 fallback:', err)
+        setGlobalNoteCount(0)
+        setVolunteerCount(0)
+      }
     }
     fetchStats()
     const interval = setInterval(fetchStats, 30000)

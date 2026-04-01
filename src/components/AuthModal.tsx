@@ -28,7 +28,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
 
     try {
       if (mode === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -37,16 +37,26 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         })
         if (signUpError) throw signUpError
 
-        // Create profile
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          await supabase.from('profiles').upsert({
-            id: user.id,
+        // Create profile — use user from signUp response directly.
+        // Do NOT call getUser() here: with email confirmation enabled the
+        // session isn't active yet, so getUser() returns null and the
+        // profile insert silently fails.
+        const newUser = signUpData?.user
+        if (newUser) {
+          const { error: profileError } = await supabase.from('profiles').upsert({
+            id: newUser.id,
             name,
             email,
             role: 'supporter',
             ...(location.trim() ? { location: location.trim() } : {}),
           })
+          if (profileError) {
+            console.error('[AuthModal] profile upsert failed:', profileError)
+          } else {
+            console.log('[AuthModal] profile created for', newUser.id)
+          }
+        } else {
+          console.warn('[AuthModal] signUp returned no user — profile not created')
         }
 
         setSent(true)
