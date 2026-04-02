@@ -24,10 +24,18 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Hospital | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [printing, setPrinting] = useState(false)
-  const [confirmPrint, setConfirmPrint] = useState(false)
-  const [showBrandingModal, setShowBrandingModal] = useState(false)
-  const [selectedBranding, setSelectedBranding] = useState<'flowers' | 'notes'>('flowers')
   const [unauthorized, setUnauthorized] = useState(false)
+
+  // Print config modal
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [printCount, setPrintCount] = useState(1)
+  const [printOrder, setPrintOrder] = useState<'oldest' | 'newest'>('oldest')
+  const [selectedBranding, setSelectedBranding] = useState<'flowers' | 'notes'>('flowers')
+
+  // After print — track which IDs were in the batch
+  const [lastPrintedIds, setLastPrintedIds] = useState<string[]>([])
+  const [confirmPrint, setConfirmPrint] = useState(false)
+
   const router = useRouter()
   const demoMode = isDemoMode()
   const supabase = createClient()
@@ -41,7 +49,6 @@ export default function AdminPage() {
 
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/'); return }
-
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -89,49 +96,59 @@ export default function AdminPage() {
     fetchNotes()
   }
 
-  function handleBatchPrint() {
+  // Queued notes for the active tab, sorted by the chosen order
+  function getQueuedNotes(order: 'oldest' | 'newest') {
     const targetHospital = activeTab === 'all' ? null : activeTab
-    const queuedNotes = notes.filter(
+    const filtered = notes.filter(
       (n) => n.status === 'queued' && (targetHospital === null || n.hospital === targetHospital)
     )
-    if (queuedNotes.length === 0) return
-    setShowBrandingModal(true)
+    return filtered.sort((a, b) =>
+      order === 'oldest'
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+  }
+
+  function openPrintModal() {
+    const total = getQueuedNotes('oldest').length
+    if (total === 0) return
+    setPrintCount(total) // default: all
+    setPrintOrder('oldest')
+    setShowPrintModal(true)
   }
 
   async function executePrint() {
-    setShowBrandingModal(false)
-    const targetHospital = activeTab === 'all' ? null : activeTab
-    const queuedNotes = notes.filter(
-      (n) => n.status === 'queued' && (targetHospital === null || n.hospital === targetHospital)
-    )
-    if (queuedNotes.length === 0) return
+    setShowPrintModal(false)
+    const sorted = getQueuedNotes(printOrder)
+    const batch = sorted.slice(0, printCount)
+    if (batch.length === 0) return
 
     setPrinting(true)
     try {
+      const targetHospital = activeTab === 'all' ? null : activeTab
       const res = await fetch('/api/admin/print', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          noteIds: queuedNotes.map((n) => n.id),
+          noteIds: batch.map((n) => n.id),
           hospital: targetHospital,
-          notes: queuedNotes,
+          notes: batch,
           branding: selectedBranding,
         }),
       })
       if (!res.ok) throw new Error()
       const html = await res.text()
-      // Open the HTML in a new tab — the page auto-calls window.print() after fonts load
       const blob = new Blob([html], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       const tab = window.open(url, '_blank')
       if (!tab) {
-        // Fallback if popup blocked: offer direct download
         const a = document.createElement('a')
         a.href = url
         a.download = `fff-notes-${targetHospital ?? 'all'}-${new Date().toISOString().slice(0, 10)}.html`
         a.click()
       }
       setTimeout(() => URL.revokeObjectURL(url), 60000)
+      setLastPrintedIds(batch.map((n) => n.id))
       setConfirmPrint(true)
     } catch {
       alert('Error preparing cards — please try again.')
@@ -141,20 +158,16 @@ export default function AdminPage() {
   }
 
   async function confirmMarkPrinted() {
-    const targetHospital = activeTab === 'all' ? null : activeTab
-    const queuedIds = notes
-      .filter((n) => n.status === 'queued' && (targetHospital === null || n.hospital === targetHospital))
-      .map((n) => n.id)
-
     if (demoMode) {
       setNotes((prev) =>
         prev.map((n) =>
-          queuedIds.includes(n.id) ? { ...n, status: 'printed', printed_at: new Date().toISOString() } : n
+          lastPrintedIds.includes(n.id) ? { ...n, status: 'printed', printed_at: new Date().toISOString() } : n
         )
       )
     } else {
-      await Promise.all(queuedIds.map((id) => updateStatus(id, 'printed')))
+      await Promise.all(lastPrintedIds.map((id) => updateStatus(id, 'printed')))
     }
+    setLastPrintedIds([])
     setConfirmPrint(false)
   }
 
@@ -167,6 +180,11 @@ export default function AdminPage() {
 
   const totalHours = Math.floor((notes.length * MINUTES_PER_NOTE) / 60)
   const totalMins = (notes.length * MINUTES_PER_NOTE) % 60
+
+  // Live preview values for the print modal
+  const modalQueued = getQueuedNotes(printOrder).length
+  const safePrintCount = Math.min(Math.max(1, printCount), modalQueued)
+  const hospitalLabel = activeTab === 'all' ? 'all hospitals' : HOSPITALS[activeTab]
 
   if (loading) {
     return (
@@ -191,42 +209,87 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      {/* Branding selector modal */}
-      {showBrandingModal && (
+
+      {/* ── Print config modal ── */}
+      {showPrintModal && (
         <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-fade-in-up">
-            <h3 className="font-display text-xl font-semibold text-charcoal mb-1 text-center">Choose card branding</h3>
-            <p className="font-body text-xs text-charcoal/50 text-center mb-5">Select which name appears on the printed cards</p>
-
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {/* Option A — Flowers for Fighters */}
-              <button
-                onClick={() => setSelectedBranding('flowers')}
-                className={`rounded-2xl p-4 border-2 text-left transition-all ${selectedBranding === 'flowers' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
-              >
-                <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 15, color: '#E8637A', lineHeight: 1.2 }} className="mb-1">
-                  Flowers for Fighters
-                </p>
-                <p className="font-body text-xs text-charcoal/40 italic mb-2">A note for you, Fighter 🌷</p>
-                <p className="font-body text-xs text-primary font-semibold">For bouquet deliveries 🌷</p>
-              </button>
-
-              {/* Option B — Notes for Fighters */}
-              <button
-                onClick={() => setSelectedBranding('notes')}
-                className={`rounded-2xl p-4 border-2 text-left transition-all ${selectedBranding === 'notes' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
-              >
-                <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 15, color: '#E8637A', lineHeight: 1.2 }} className="mb-1">
-                  Notes for Fighters
-                </p>
-                <p className="font-body text-xs text-charcoal/40 italic mb-2">A note for you, Fighter 🌷</p>
-                <p className="font-body text-xs text-primary font-semibold">For notes-only deliveries ✉️</p>
-              </button>
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-fade-in-up space-y-5">
+            <div className="text-center">
+              <h3 className="font-display text-xl font-semibold text-charcoal mb-1">Print notes</h3>
+              <p className="font-body text-xs text-charcoal/50">{modalQueued} queued for {hospitalLabel}</p>
             </div>
 
+            {/* Count */}
+            <div>
+              <label className="font-body text-sm font-semibold text-charcoal block mb-1.5">
+                How many notes to print?
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={modalQueued}
+                value={printCount}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value) || 1
+                  setPrintCount(Math.min(Math.max(1, v), modalQueued))
+                }}
+                className="w-full border border-cream-dark rounded-2xl px-4 py-2.5 font-body text-sm text-charcoal focus:outline-none focus:border-primary"
+              />
+            </div>
+
+            {/* Order */}
+            <div>
+              <label className="font-body text-sm font-semibold text-charcoal block mb-1.5">
+                Start from:
+              </label>
+              <select
+                value={printOrder}
+                onChange={(e) => setPrintOrder(e.target.value as 'oldest' | 'newest')}
+                className="w-full border border-cream-dark rounded-2xl px-4 py-2.5 font-body text-sm text-charcoal focus:outline-none focus:border-primary bg-white"
+              >
+                <option value="oldest">Oldest first (first note submitted)</option>
+                <option value="newest">Newest first (most recent note submitted)</option>
+              </select>
+            </div>
+
+            {/* Branding */}
+            <div>
+              <label className="font-body text-sm font-semibold text-charcoal block mb-1.5">
+                Card branding:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSelectedBranding('flowers')}
+                  className={`rounded-2xl p-3 border-2 text-left transition-all ${selectedBranding === 'flowers' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
+                >
+                  <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
+                    Flowers for Fighters
+                  </p>
+                  <p className="font-body text-xs text-charcoal/40">Bouquet deliveries 🌷</p>
+                </button>
+                <button
+                  onClick={() => setSelectedBranding('notes')}
+                  className={`rounded-2xl p-3 border-2 text-left transition-all ${selectedBranding === 'notes' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
+                >
+                  <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
+                    Notes for Fighters
+                  </p>
+                  <p className="font-body text-xs text-charcoal/40">Notes-only deliveries ✉️</p>
+                </button>
+              </div>
+            </div>
+
+            {/* Live preview line */}
+            <p className="font-body text-xs text-charcoal/50 text-center bg-cream rounded-2xl px-3 py-2">
+              This will print notes <span className="font-semibold text-charcoal">1 to {safePrintCount}</span> of{' '}
+              <span className="font-semibold text-charcoal">{modalQueued}</span> queued notes for{' '}
+              <span className="font-semibold text-charcoal">{hospitalLabel}</span>
+            </p>
+
+            {/* Actions */}
             <div className="flex gap-2">
               <button
-                onClick={() => setShowBrandingModal(false)}
+                onClick={() => setShowPrintModal(false)}
                 className="flex-1 py-3 rounded-2xl font-body font-semibold text-charcoal/60 border border-cream-dark"
               >
                 Cancel
@@ -236,21 +299,21 @@ export default function AdminPage() {
                 className="flex-1 py-3 rounded-2xl font-body font-semibold text-white bg-primary"
                 style={{ boxShadow: '0 4px 16px rgba(232,99,122,0.3)' }}
               >
-                Generate PDF 🖨️
+                Print {safePrintCount} {safePrintCount === 1 ? 'note' : 'notes'} 🖨️
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirm print modal */}
+      {/* ── Confirm mark printed modal ── */}
       {confirmPrint && (
         <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-fade-in-up">
             <h3 className="font-display text-xl font-semibold text-charcoal mb-2">Mark as Printed?</h3>
             <p className="font-body text-charcoal/60 text-sm mb-4">
-              Move all queued notes for{' '}
-              {activeTab === 'all' ? 'all hospitals' : HOSPITALS[activeTab]} to &quot;Printed&quot;?
+              Mark these <span className="font-semibold text-charcoal">{lastPrintedIds.length}</span> notes as printed?
+              The remaining queued notes will stay in the queue.
             </p>
             <div className="flex gap-2">
               <button
@@ -263,7 +326,7 @@ export default function AdminPage() {
                 onClick={confirmMarkPrinted}
                 className="flex-1 py-3 rounded-2xl font-body font-semibold text-white bg-primary"
               >
-                Yes, mark printed
+                Yes, mark {lastPrintedIds.length} printed
               </button>
             </div>
           </div>
@@ -330,13 +393,13 @@ export default function AdminPage() {
         {/* Batch print button */}
         {queuedCount(activeTab === 'all' ? undefined : activeTab) > 0 && (
           <button
-            onClick={handleBatchPrint}
+            onClick={openPrintModal}
             disabled={printing}
             className="w-full py-3.5 rounded-2xl bg-charcoal text-white font-body font-bold text-sm transition-all active:scale-95 disabled:opacity-60 animate-fade-in-up stagger-2"
           >
             {printing
               ? '⏳ Preparing cards...'
-              : `🖨️ Print Batch for ${activeTab === 'all' ? 'All Hospitals' : HOSPITALS[activeTab]} (${queuedCount(activeTab === 'all' ? undefined : activeTab)} notes)`}
+              : `🖨️ Print Batch for ${activeTab === 'all' ? 'All Hospitals' : HOSPITALS[activeTab]} (${queuedCount(activeTab === 'all' ? undefined : activeTab)} queued)`}
           </button>
         )}
 
