@@ -18,6 +18,9 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+  const [showReset, setShowReset] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
 
   const supabase = createClient()
 
@@ -75,7 +78,17 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         onClose?.()
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
+      setError(msg)
+      // Show reset option on any login credential failure
+      if (mode === 'login' && (
+        msg.toLowerCase().includes('invalid') ||
+        msg.toLowerCase().includes('incorrect') ||
+        msg.toLowerCase().includes('credentials') ||
+        msg.toLowerCase().includes('password')
+      )) {
+        setShowReset(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -123,8 +136,33 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         </p>
 
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 text-red-600 text-sm font-body">
-            {error}
+          <div className="mb-4 rounded-xl bg-red-50 text-red-600 text-sm font-body overflow-hidden">
+            <p className="p-3">{error}</p>
+            {showReset && !resetSent && (
+              <div className="border-t border-red-100 px-3 py-2.5 flex items-center justify-between bg-red-50/60">
+                <span className="text-xs text-red-400">Forgot your password?</span>
+                <button
+                  type="button"
+                  disabled={resetLoading || !email}
+                  onClick={async () => {
+                    setResetLoading(true)
+                    await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/`,
+                    })
+                    setResetLoading(false)
+                    setResetSent(true)
+                  }}
+                  className="text-xs font-semibold text-primary underline disabled:opacity-50"
+                >
+                  {resetLoading ? 'Sending…' : `Send reset email${email ? ` to ${email}` : ''}`}
+                </button>
+              </div>
+            )}
+            {showReset && resetSent && (
+              <div className="border-t border-red-100 px-3 py-2.5 bg-red-50/60">
+                <p className="text-xs text-sage font-semibold">✓ Reset email sent — check your inbox</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -181,7 +219,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => { setPassword(e.target.value); setShowReset(false); setResetSent(false) }}
               placeholder="Choose a password"
               required
               minLength={6}
@@ -206,7 +244,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         <p className="text-center font-body text-sm text-charcoal/50 mt-4">
           {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
-            onClick={() => setMode(mode === 'signup' ? 'login' : 'signup')}
+            onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(''); setShowReset(false); setResetSent(false) }}
             className="text-primary font-semibold"
           >
             {mode === 'signup' ? 'Log in' : 'Sign up'}
