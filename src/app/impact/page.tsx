@@ -23,9 +23,18 @@ interface ProfileData {
   role: string
   current_streak: number
   longest_streak: number
+  last_note_date: string | null
   referral_code: string | null
   referral_count: number
   referral_bonus_minutes: number
+}
+
+// Compute effective streak: only count it if the user wrote today or yesterday
+function effectiveStreak(streak: number, lastNoteDate: string | null): number {
+  if (!lastNoteDate || streak === 0) return 0
+  const todayUTC = new Date().toISOString().slice(0, 10)
+  const yesterdayUTC = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+  return lastNoteDate === todayUTC || lastNoteDate === yesterdayUTC ? streak : 0
 }
 
 export default function ImpactPage() {
@@ -44,7 +53,7 @@ export default function ImpactPage() {
   useEffect(() => {
     if (demoMode) {
       setUser({ id: 'demo', email: 'demo@example.com' } as User)
-      setProfile({ name: 'Demo', role: 'admin', current_streak: 3, longest_streak: 5, referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 })
+      setProfile({ name: 'Demo', role: 'admin', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 })
       fetchNotes('demo')
       return
     }
@@ -63,10 +72,10 @@ export default function ImpactPage() {
   }, [])
 
   async function fetchProfile(userId: string) {
-    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter', current_streak: 3, longest_streak: 5, referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 }); return }
+    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 }); return }
     const { data } = await supabase
       .from('profiles')
-      .select('name, role, current_streak, longest_streak, referral_code, referral_count, referral_bonus_minutes')
+      .select('name, role, current_streak, longest_streak, last_note_date, referral_code, referral_count, referral_bonus_minutes')
       .eq('id', userId)
       .single()
     if (data) setProfile(data as ProfileData)
@@ -106,7 +115,7 @@ export default function ImpactPage() {
     ? Math.min(100, (totalNotes / nextBadge.threshold) * 100)
     : 100
 
-  const currentStreak = profile?.current_streak ?? 0
+  const currentStreak = effectiveStreak(profile?.current_streak ?? 0, profile?.last_note_date ?? null)
   const referralLink = profile?.referral_code
     ? `https://notesforfighters.vercel.app?ref=${profile.referral_code}`
     : null
