@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase-server'
+import { createServiceClient } from '@/lib/supabase-server'
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = await createClient()
+    const supabase = createServiceClient()
     const { ref_code, new_user_id } = await req.json() as { ref_code: string; new_user_id: string }
 
     if (!ref_code || !new_user_id) {

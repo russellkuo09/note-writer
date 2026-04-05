@@ -43,11 +43,15 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         // profile insert silently fails.
         const newUser = signUpData?.user
         if (newUser) {
+          // Generate a random 8-char referral code
+          const referralCode = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+            .map(b => b.toString(16).padStart(2, '0')).join('')
           const { error: profileError } = await supabase.from('profiles').upsert({
             id: newUser.id,
             name,
             email,
             role: 'supporter',
+            referral_code: referralCode,
             ...(location.trim() ? { location: location.trim() } : {}),
           })
           if (profileError) {
