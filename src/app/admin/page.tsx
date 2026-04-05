@@ -36,6 +36,10 @@ export default function AdminPage() {
   const [lastPrintedIds, setLastPrintedIds] = useState<string[]>([])
   const [confirmPrint, setConfirmPrint] = useState(false)
 
+  // Password reset
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetState, setResetState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+
   const router = useRouter()
   const demoMode = isDemoMode()
   const supabase = createClient()
@@ -419,6 +423,40 @@ export default function AdminPage() {
         >
           📊 Export Volunteer Hours CSV
         </button>
+
+        {/* Password reset tool */}
+        <div className="bg-white rounded-2xl border border-cream-dark p-4 animate-fade-in-up stagger-2">
+          <p className="font-body text-sm font-semibold text-charcoal mb-3">🔑 Send Password Reset Email</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={resetEmail}
+              onChange={(e) => { setResetEmail(e.target.value); setResetState('idle') }}
+              placeholder="volunteer@email.com"
+              className="flex-1 border border-cream-dark rounded-xl px-3 py-2 font-body text-sm text-charcoal focus:outline-none focus:border-primary"
+            />
+            <button
+              disabled={!resetEmail || resetState === 'sending'}
+              onClick={async () => {
+                setResetState('sending')
+                const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+                  redirectTo: `${window.location.origin}/`,
+                })
+                setResetState(error ? 'error' : 'sent')
+              }}
+              className="px-4 py-2 rounded-xl font-body font-semibold text-sm text-white bg-primary disabled:opacity-50 transition-all"
+              style={{ boxShadow: '0 2px 8px rgba(232,99,122,0.25)' }}
+            >
+              {resetState === 'sending' ? '...' : 'Send'}
+            </button>
+          </div>
+          {resetState === 'sent' && (
+            <p className="font-body text-xs text-sage mt-2">✓ Reset email sent to {resetEmail}</p>
+          )}
+          {resetState === 'error' && (
+            <p className="font-body text-xs text-red-400 mt-2">Something went wrong — check the email address.</p>
+          )}
+        </div>
 
         {/* Note cards */}
         <div className="space-y-3 animate-fade-in-up stagger-3">
