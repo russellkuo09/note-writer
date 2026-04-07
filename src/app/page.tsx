@@ -296,7 +296,7 @@ export default function WritePage() {
   }
 
   const charCount = note.length
-  const charMin = 50
+  const charMin = 85
   const charMax = 300
   const charOk = charCount >= charMin && charCount <= charMax
 

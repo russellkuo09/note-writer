@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const { hospital, patient_prompt, body, dedication } = await req.json()
 
-    if (!hospital || !body || body.trim().length < 20) {
+    if (!hospital || !body || body.trim().length < 85) {
       return NextResponse.json({ error: 'Invalid note' }, { status: 400 })
     }
 
