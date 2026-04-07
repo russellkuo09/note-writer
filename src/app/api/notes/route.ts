@@ -129,6 +129,7 @@ export async function GET() {
       .from('notes')
       .select('*')
       .eq('author_id', user.id)
+      .neq('status', 'archived')
       .order('created_at', { ascending: false })
 
     return NextResponse.json({ notes: notes ?? [] })

@@ -182,8 +182,9 @@ export default function AdminPage() {
   const queuedCount = (hospital?: Hospital) =>
     notes.filter((n) => n.status === 'queued' && (!hospital || n.hospital === hospital)).length
 
-  const totalHours = Math.floor((notes.length * MINUTES_PER_NOTE) / 60)
-  const totalMins = (notes.length * MINUTES_PER_NOTE) % 60
+  const activeNotes = notes.filter(n => n.status !== 'archived')
+  const totalHours = Math.floor((activeNotes.length * MINUTES_PER_NOTE) / 60)
+  const totalMins = (activeNotes.length * MINUTES_PER_NOTE) % 60
 
   // Live preview values for the print modal
   const modalQueued = getQueuedNotes(printOrder).length
@@ -356,7 +357,7 @@ export default function AdminPage() {
             <p className="font-body text-xs text-charcoal/60 mt-0.5">Queued</p>
           </div>
           <div className="bg-white rounded-2xl border border-cream-dark p-4 text-center">
-            <p className="font-display text-2xl font-bold text-charcoal">{notes.length}</p>
+            <p className="font-display text-2xl font-bold text-charcoal">{activeNotes.length}</p>
             <p className="font-body text-xs text-charcoal/60 mt-0.5">All-time notes</p>
           </div>
           <div className="bg-white rounded-2xl border border-cream-dark p-4 text-center">

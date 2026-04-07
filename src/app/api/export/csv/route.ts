@@ -60,10 +60,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 })
   }
 
-  // 2. All volunteer_hours rows
+  // 2. volunteer_hours joined with non-archived notes only
   const { data: hoursRows, error: hoursError } = await svc
     .from('volunteer_hours')
-    .select('user_id, minutes')
+    .select('user_id, minutes, notes!inner(status)')
+    .neq('notes.status', 'archived')
 
   if (hoursError) {
     console.error('[export/csv] volunteer_hours error:', hoursError)
