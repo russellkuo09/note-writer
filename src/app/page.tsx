@@ -81,7 +81,7 @@ export default function WritePage() {
         if (!res.ok) throw new Error(`Stats API returned ${res.status}`)
         const data = await res.json() as { total_notes: number; total_volunteers: number }
         console.log('[fetchStats] API response:', data)
-        console.log('[fetchStats] displaying notes:', 97 + data.total_notes, '  volunteers:', 10 + data.total_volunteers)
+        console.log('[fetchStats] displaying notes:', 150 + data.total_notes, '  volunteers:', 10 + data.total_volunteers)
         setGlobalNoteCount(data.total_notes ?? 0)
         setVolunteerCount(data.total_volunteers ?? 0)
       } catch (err) {
@@ -336,7 +336,7 @@ export default function WritePage() {
           <div className="flex items-center gap-3 px-5 py-3 bg-blush rounded-full mb-10 animate-fade-in-up stagger-4">
             <span className="text-xl">💐</span>
             <span className="font-body font-semibold text-primary text-sm">
-              90+ bouquets delivered across 4 hospitals
+              100+ bouquets delivered across 4 hospitals
             </span>
           </div>
 
@@ -344,7 +344,7 @@ export default function WritePage() {
           <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
             {globalNoteCount === null
               ? ''
-              : `🌷 ${(97 + globalNoteCount).toLocaleString()}+ notes written for Fighters so far`}
+              : `🌷 ${(150 + globalNoteCount).toLocaleString()}+ notes delivered to Fighters so far`}
           </p>
 
           <button
@@ -390,9 +390,9 @@ export default function WritePage() {
           <div className="flex gap-3 max-w-sm mx-auto">
             <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
               <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                {(97 + (globalNoteCount ?? 0)).toLocaleString()}+
+                {(150 + (globalNoteCount ?? 0)).toLocaleString()}+
               </p>
-              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
+              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes delivered</p>
             </div>
             <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
               <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
