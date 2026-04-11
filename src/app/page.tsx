@@ -341,15 +341,10 @@ export default function WritePage() {
           </div>
 
           {/* Live note counter */}
-          <p className="font-body text-sm font-semibold text-primary mb-2 animate-fade-in-up stagger-4">
+          <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
             {globalNoteCount === null
               ? ''
               : `🌷 ${(97 + globalNoteCount).toLocaleString()}+ notes written for Fighters so far`}
-          </p>
-
-          {/* Delivered stat — always visible */}
-          <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
-            📬 150+ notes delivered to Fighters so far
           </p>
 
           <button
@@ -395,9 +390,9 @@ export default function WritePage() {
           <div className="flex gap-3 max-w-sm mx-auto">
             <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
               <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                150+
+                {(97 + (globalNoteCount ?? 0)).toLocaleString()}+
               </p>
-              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">📬 notes delivered</p>
+              <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">🌷 notes written</p>
             </div>
             <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
               <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
