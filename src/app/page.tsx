@@ -347,9 +347,9 @@ export default function WritePage() {
               : `🌷 ${(97 + globalNoteCount).toLocaleString()}+ notes written for Fighters so far`}
           </p>
 
-          {/* Delivered stat */}
+          {/* Delivered stat — always visible */}
           <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
-            📬 150+ notes delivered to Fighters
+            📬 150+ notes delivered to Fighters so far
           </p>
 
           <button
