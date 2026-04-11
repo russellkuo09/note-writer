@@ -341,10 +341,15 @@ export default function WritePage() {
           </div>
 
           {/* Live note counter */}
-          <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
+          <p className="font-body text-sm font-semibold text-primary mb-2 animate-fade-in-up stagger-4">
             {globalNoteCount === null
               ? ''
               : `🌷 ${(97 + globalNoteCount).toLocaleString()}+ notes written for Fighters so far`}
+          </p>
+
+          {/* Delivered stat */}
+          <p className="font-body text-sm font-semibold text-primary mb-6 animate-fade-in-up stagger-4">
+            📬 150+ notes delivered to Fighters
           </p>
 
           <button
