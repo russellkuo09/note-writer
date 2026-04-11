@@ -408,21 +408,12 @@ export default function AdminPage() {
           </button>
         )}
 
-        {/* Export CSV */}
+        {/* Volunteer Hours */}
         <button
-          onClick={async () => {
-            const res = await fetch('/api/export/csv')
-            const blob = await res.blob()
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `fff-volunteer-hours-${new Date().toISOString().slice(0, 10)}.csv`
-            a.click()
-            URL.revokeObjectURL(url)
-          }}
+          onClick={() => router.push('/admin/volunteers')}
           className="w-full py-3 rounded-2xl bg-white text-charcoal/70 font-body font-semibold text-sm border border-cream-dark hover:border-primary/30 transition-all animate-fade-in-up stagger-2"
         >
-          📊 Export Volunteer Hours CSV
+          📊 Volunteer Hours
         </button>
 
         {/* Password reset tool */}
