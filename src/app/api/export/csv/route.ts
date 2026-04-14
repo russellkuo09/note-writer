@@ -50,13 +50,27 @@ export async function GET() {
   // Use service role client to bypass RLS
   const svc = createServiceClient()
 
-  // 1. All profiles
-  const { data: profiles, error: profilesError } = await svc
+  // 1. All profiles — try with school column, fall back if it doesn't exist yet
+  let profiles: Array<{ id: string; name: string | null; email: string | null; location: string | null; school?: string | null; role: string | null; referral_bonus_minutes: number | null }> | null = null
+
+  const withSchool = await svc
     .from('profiles')
     .select('id, name, email, location, role, referral_bonus_minutes, school')
 
-  if (profilesError || !profiles) {
-    console.error('[export/csv] profiles error:', profilesError)
+  if (withSchool.error) {
+    const withoutSchool = await svc
+      .from('profiles')
+      .select('id, name, email, location, role, referral_bonus_minutes')
+    if (withoutSchool.error || !withoutSchool.data) {
+      console.error('[export/csv] profiles error:', withoutSchool.error)
+      return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 })
+    }
+    profiles = withoutSchool.data
+  } else {
+    profiles = withSchool.data
+  }
+
+  if (!profiles) {
     return NextResponse.json({ error: 'Failed to fetch profiles' }, { status: 500 })
   }
 

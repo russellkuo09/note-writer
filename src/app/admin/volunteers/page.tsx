@@ -7,29 +7,16 @@ import { createClient, isDemoMode } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
+import type { VolunteerData } from '@/app/api/admin/volunteers-data/route'
 
-interface VolunteerRow {
-  rank: number
-  name: string
-  email: string
-  location: string
-  school: string
-  role: string
-  notes: number
-  noteMinutes: number
-  referralMinutes: number
-  totalMinutes: number
-  totalHours: string
-}
-
-const DEMO_ROWS: VolunteerRow[] = [
+const DEMO_ROWS: VolunteerData[] = [
   { rank: 1, name: 'Emily R.', email: 'emily@example.com', location: 'Los Angeles, CA', school: 'Diamond Bar High School', role: 'supporter', notes: 25, noteMinutes: 375, referralMinutes: 30, totalMinutes: 405, totalHours: '6.75' },
   { rank: 2, name: 'Sarah M.', email: 'sarah@example.com', location: 'Diamond Bar, CA', school: 'Ayala High School', role: 'supporter', notes: 12, noteMinutes: 180, referralMinutes: 0, totalMinutes: 180, totalHours: '3.00' },
   { rank: 3, name: 'James K.', email: 'james@example.com', location: '', school: '', role: 'supporter', notes: 8, noteMinutes: 120, referralMinutes: 30, totalMinutes: 150, totalHours: '2.50' },
 ]
 
 export default function VolunteersPage() {
-  const [rows, setRows] = useState<VolunteerRow[]>([])
+  const [rows, setRows] = useState<VolunteerData[]>([])
   const [loading, setLoading] = useState(true)
   const [unauthorized, setUnauthorized] = useState(false)
   const [search, setSearch] = useState('')
@@ -49,51 +36,15 @@ export default function VolunteersPage() {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
       if (!profile || profile.role !== 'admin') { setUnauthorized(true); setLoading(false); return }
 
-      const res = await fetch('/api/export/csv')
-      if (!res.ok) { setLoading(false); return }
-      const text = await res.text()
-      const lines = text.trim().split('\n')
-      const parsed: VolunteerRow[] = lines.slice(1).map((line) => {
-        // Parse CSV respecting quoted fields
-        const cols: string[] = []
-        let cur = '', inQ = false
-        for (let i = 0; i < line.length; i++) {
-          if (line[i] === '"') { inQ = !inQ }
-          else if (line[i] === ',' && !inQ) { cols.push(cur); cur = '' }
-          else { cur += line[i] }
-        }
-        cols.push(cur)
-        return {
-          rank: parseInt(cols[0]) || 0,
-          name: cols[1] ?? '',
-          email: cols[2] ?? '',
-          location: cols[3] ?? '',
-          school: cols[4] ?? '',
-          role: cols[5] ?? '',
-          notes: parseInt(cols[6]) || 0,
-          noteMinutes: parseInt(cols[7]) || 0,
-          referralMinutes: parseInt(cols[8]) || 0,
-          totalMinutes: parseInt(cols[9]) || 0,
-          totalHours: cols[10] ?? '0.00',
-        }
-      })
-      setRows(parsed)
+      const res = await fetch('/api/admin/volunteers-data')
+      if (res.ok) {
+        const data = await res.json()
+        setRows(Array.isArray(data) ? data : [])
+      }
       setLoading(false)
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  function downloadCsv() {
-    fetch('/api/export/csv').then(async res => {
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `fff-volunteer-hours-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
-    })
-  }
 
   const filtered = rows.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -128,18 +79,27 @@ export default function VolunteersPage() {
     <div className="min-h-screen bg-background pb-32">
       {/* Top bar */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-cream-dark px-4 py-3 safe-top">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={() => router.push('/admin')} className="text-charcoal/50 font-body text-sm">← Admin</button>
             <Logo size="sm" />
           </div>
-          <span className="font-body text-xs text-charcoal/50 bg-sage/20 text-sage px-2 py-1 rounded-full font-semibold">
-            Volunteer Hours
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-body text-xs text-charcoal/50 bg-sage/20 text-sage px-2 py-1 rounded-full font-semibold">
+              Volunteer Hours
+            </span>
+            <button
+              onClick={() => window.open('/admin/volunteers/print', '_blank')}
+              className="font-body text-xs font-semibold text-white bg-primary px-3 py-1.5 rounded-full transition-all"
+              style={{ boxShadow: '0 2px 8px rgba(232,99,122,0.25)' }}
+            >
+              🖨️ Print PDF
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pt-5 space-y-5">
+      <div className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
 
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-3 animate-fade-in-up">
@@ -157,22 +117,15 @@ export default function VolunteersPage() {
           </div>
         </div>
 
-        {/* Search + Download */}
-        <div className="flex gap-2 animate-fade-in-up stagger-1">
+        {/* Search */}
+        <div className="animate-fade-in-up stagger-1">
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, email, or location…"
-            className="flex-1 border border-cream-dark rounded-2xl px-4 py-2.5 font-body text-sm text-charcoal focus:outline-none focus:border-primary bg-white"
+            placeholder="Search by name, email, location, or school…"
+            className="w-full border border-cream-dark rounded-2xl px-4 py-2.5 font-body text-sm text-charcoal focus:outline-none focus:border-primary bg-white"
           />
-          <button
-            onClick={downloadCsv}
-            className="px-4 py-2.5 rounded-2xl font-body font-semibold text-sm text-white bg-primary shrink-0"
-            style={{ boxShadow: '0 2px 8px rgba(232,99,122,0.25)' }}
-          >
-            ↓ CSV
-          </button>
         </div>
 
         {/* Table */}
