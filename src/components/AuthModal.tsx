@@ -15,6 +15,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [location, setLocation] = useState('')
+  const [school, setSchool] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -56,6 +57,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
             role: 'supporter',
             referral_code: referralCode,
             ...(location.trim() ? { location: location.trim() } : {}),
+            ...(school.trim() ? { school: school.trim() } : {}),
           })
           if (profileError) {
             console.error('[AuthModal] profile upsert failed:', profileError)
@@ -194,6 +196,18 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                   className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
                 <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">Helps us show our reach 🌷</p>
+              </div>
+              <div>
+                <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
+                  What school do you go to? <span className="normal-case font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={school}
+                  onChange={(e) => setSchool(e.target.value.slice(0, 100))}
+                  placeholder="e.g. Ayala High School, Diamond Bar High School"
+                  className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
               </div>
             </>
           )}

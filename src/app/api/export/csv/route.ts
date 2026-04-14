@@ -53,7 +53,7 @@ export async function GET() {
   // 1. All profiles
   const { data: profiles, error: profilesError } = await svc
     .from('profiles')
-    .select('id, name, email, location, role, referral_bonus_minutes')
+    .select('id, name, email, location, role, referral_bonus_minutes, school')
 
   if (profilesError || !profiles) {
     console.error('[export/csv] profiles error:', profilesError)
@@ -89,6 +89,7 @@ export async function GET() {
         name: p.name ?? '',
         email: p.email ?? '',
         location: p.location ?? '',
+        school: (p.school as string | null) ?? '',
         role: p.role ?? '',
         notes: stats.notes,
         noteMinutes: stats.noteMinutes,
@@ -106,6 +107,7 @@ export async function GET() {
     'Name',
     'Email',
     'Location',
+    'School',
     'Role',
     'Notes Written',
     'Note Minutes',
@@ -119,6 +121,7 @@ export async function GET() {
     r.name,
     r.email,
     r.location,
+    r.school,
     r.role,
     r.notes,
     r.noteMinutes,

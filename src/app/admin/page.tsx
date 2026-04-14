@@ -2,13 +2,20 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient, isDemoMode } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
 import { HOSPITALS, HOSPITAL_SLUGS, MINUTES_PER_NOTE } from '@/types'
 import type { Hospital, Note, NoteStatus } from '@/types'
+
+interface SchoolStat {
+  school: string
+  volunteers: number
+  totalNotes: number
+  monthNotes: number
+}
 
 // Demo notes for when Supabase is not connected
 const DEMO_NOTES: Note[] = [
@@ -40,6 +47,10 @@ export default function AdminPage() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetState, setResetState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
+  // School stats
+  const [schoolStats, setSchoolStats] = useState<SchoolStat[]>([])
+  const [schoolStatsLoaded, setSchoolStatsLoaded] = useState(false)
+
   const router = useRouter()
   const demoMode = isDemoMode()
   const supabase = createClient()
@@ -67,6 +78,10 @@ export default function AdminPage() {
       }
 
       fetchNotes()
+      fetch('/api/admin/school-stats')
+        .then(r => r.json())
+        .then(data => { setSchoolStats(Array.isArray(data) ? data : []); setSchoolStatsLoaded(true) })
+        .catch(() => setSchoolStatsLoaded(true))
     })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -415,6 +430,50 @@ export default function AdminPage() {
         >
           📊 Volunteer Hours
         </button>
+
+        {/* Schools breakdown */}
+        <div className="bg-white rounded-2xl border border-cream-dark overflow-hidden animate-fade-in-up stagger-2">
+          <div className="px-4 py-3 border-b border-cream-dark flex items-center justify-between">
+            <p className="font-body text-sm font-semibold text-charcoal">🏫 Schools</p>
+            <p className="font-body text-xs text-charcoal/40">{schoolStats.length} school{schoolStats.length !== 1 ? 's' : ''}</p>
+          </div>
+          {!schoolStatsLoaded ? (
+            <div className="py-6 text-center">
+              <span className="text-2xl animate-pulse-soft block">🏫</span>
+            </div>
+          ) : schoolStats.length === 0 ? (
+            <div className="py-6 text-center">
+              <p className="font-body text-xs text-charcoal/40">No school data yet — volunteers can add their school when signing up.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm font-body">
+                <thead>
+                  <tr className="border-b border-cream-dark bg-cream/50">
+                    <th className="text-left px-4 py-2.5 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">School</th>
+                    <th className="text-center px-3 py-2.5 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">Volunteers</th>
+                    <th className="text-center px-3 py-2.5 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">All-time notes</th>
+                    <th className="text-center px-3 py-2.5 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">This month</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schoolStats.map((s) => (
+                    <tr key={s.school} className="border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
+                      <td className="px-4 py-3 font-semibold text-charcoal text-sm">{s.school}</td>
+                      <td className="px-3 py-3 text-center text-charcoal/70">{s.volunteers}</td>
+                      <td className="px-3 py-3 text-center font-bold text-primary">{s.totalNotes}</td>
+                      <td className="px-3 py-3 text-center">
+                        {s.monthNotes > 0
+                          ? <span className="font-semibold text-sage">{s.monthNotes}</span>
+                          : <span className="text-charcoal/30">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
         {/* Password reset tool */}
         <div className="bg-white rounded-2xl border border-cream-dark p-4 animate-fade-in-up stagger-2">

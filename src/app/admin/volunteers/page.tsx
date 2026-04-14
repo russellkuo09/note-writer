@@ -13,6 +13,7 @@ interface VolunteerRow {
   name: string
   email: string
   location: string
+  school: string
   role: string
   notes: number
   noteMinutes: number
@@ -22,9 +23,9 @@ interface VolunteerRow {
 }
 
 const DEMO_ROWS: VolunteerRow[] = [
-  { rank: 1, name: 'Emily R.', email: 'emily@example.com', location: 'Los Angeles, CA', role: 'supporter', notes: 25, noteMinutes: 375, referralMinutes: 30, totalMinutes: 405, totalHours: '6.75' },
-  { rank: 2, name: 'Sarah M.', email: 'sarah@example.com', location: 'Diamond Bar, CA', role: 'supporter', notes: 12, noteMinutes: 180, referralMinutes: 0, totalMinutes: 180, totalHours: '3.00' },
-  { rank: 3, name: 'James K.', email: 'james@example.com', location: '', role: 'supporter', notes: 8, noteMinutes: 120, referralMinutes: 30, totalMinutes: 150, totalHours: '2.50' },
+  { rank: 1, name: 'Emily R.', email: 'emily@example.com', location: 'Los Angeles, CA', school: 'Diamond Bar High School', role: 'supporter', notes: 25, noteMinutes: 375, referralMinutes: 30, totalMinutes: 405, totalHours: '6.75' },
+  { rank: 2, name: 'Sarah M.', email: 'sarah@example.com', location: 'Diamond Bar, CA', school: 'Ayala High School', role: 'supporter', notes: 12, noteMinutes: 180, referralMinutes: 0, totalMinutes: 180, totalHours: '3.00' },
+  { rank: 3, name: 'James K.', email: 'james@example.com', location: '', school: '', role: 'supporter', notes: 8, noteMinutes: 120, referralMinutes: 30, totalMinutes: 150, totalHours: '2.50' },
 ]
 
 export default function VolunteersPage() {
@@ -67,12 +68,13 @@ export default function VolunteersPage() {
           name: cols[1] ?? '',
           email: cols[2] ?? '',
           location: cols[3] ?? '',
-          role: cols[4] ?? '',
-          notes: parseInt(cols[5]) || 0,
-          noteMinutes: parseInt(cols[6]) || 0,
-          referralMinutes: parseInt(cols[7]) || 0,
-          totalMinutes: parseInt(cols[8]) || 0,
-          totalHours: cols[9] ?? '0.00',
+          school: cols[4] ?? '',
+          role: cols[5] ?? '',
+          notes: parseInt(cols[6]) || 0,
+          noteMinutes: parseInt(cols[7]) || 0,
+          referralMinutes: parseInt(cols[8]) || 0,
+          totalMinutes: parseInt(cols[9]) || 0,
+          totalHours: cols[10] ?? '0.00',
         }
       })
       setRows(parsed)
@@ -96,7 +98,8 @@ export default function VolunteersPage() {
   const filtered = rows.filter(r =>
     r.name.toLowerCase().includes(search.toLowerCase()) ||
     r.email.toLowerCase().includes(search.toLowerCase()) ||
-    r.location.toLowerCase().includes(search.toLowerCase())
+    r.location.toLowerCase().includes(search.toLowerCase()) ||
+    r.school.toLowerCase().includes(search.toLowerCase())
   )
 
   if (loading) {
@@ -181,6 +184,7 @@ export default function VolunteersPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">#</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide hidden sm:table-cell">Location</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide hidden md:table-cell">School</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">Notes</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide hidden sm:table-cell">Bonus min</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold text-charcoal/50 uppercase tracking-wide">Total hrs</th>
@@ -188,7 +192,7 @@ export default function VolunteersPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-10 text-charcoal/40 font-body text-sm">No results</td></tr>
+                  <tr><td colSpan={7} className="text-center py-10 text-charcoal/40 font-body text-sm">No results</td></tr>
                 ) : filtered.map((r) => (
                   <tr key={r.email} className="border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
                     <td className="px-4 py-3 text-charcoal/40 text-xs">{r.rank}</td>
@@ -197,6 +201,7 @@ export default function VolunteersPage() {
                       <p className="text-charcoal/40 text-xs">{r.email}</p>
                     </td>
                     <td className="px-4 py-3 text-charcoal/50 text-xs hidden sm:table-cell">{r.location || '—'}</td>
+                    <td className="px-4 py-3 text-charcoal/50 text-xs hidden md:table-cell">{r.school || '—'}</td>
                     <td className="px-4 py-3 text-center font-semibold text-charcoal">{r.notes}</td>
                     <td className="px-4 py-3 text-center text-charcoal/50 hidden sm:table-cell">
                       {r.referralMinutes > 0 ? <span className="text-sage font-semibold">+{r.referralMinutes}</span> : '—'}
