@@ -425,7 +425,7 @@ export default function AdminPage() {
 
         {/* Volunteer Hours */}
         <button
-          onClick={() => router.push('/admin/volunteers')}
+          onClick={() => window.open('/admin/volunteers', '_blank')}
           className="w-full py-3 rounded-2xl bg-white text-charcoal/70 font-body font-semibold text-sm border border-cream-dark hover:border-primary/30 transition-all animate-fade-in-up stagger-2"
         >
           📊 Volunteer Hours
