@@ -18,7 +18,7 @@ const DRAFT_KEY = 'fff-note-draft'
 const REF_CODE_KEY = 'fff-ref-code'
 
 const PLACEHOLDER =
-  "Hey Fighter — I don't know your name, but I want you to know someone out here is rooting for you. You've got this. 🌷"
+  "Hey Fighter! I know I don't know you but I want you to know that all of us are rooting for you! You're stronger than you know and you got this!!! 🌷🌷"
 
 type AiState = 'idle' | 'loading' | 'done' | 'error'
 
