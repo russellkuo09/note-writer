@@ -296,7 +296,7 @@ export default function WritePage() {
   }
 
   const charCount = note.length
-  const charMin = 85
+  const charMin = 100
   const charMax = 300
   const charOk = charCount >= charMin && charCount <= charMax
 
@@ -657,7 +657,7 @@ export default function WritePage() {
 
           {/* Print tip */}
           <p className="text-xs font-body text-charcoal/30 mt-1 ml-1">
-            Shorter notes print better on cards 🌷
+            Minimum 100 characters. Speak from the heart! 🌷
           </p>
         </div>
 
