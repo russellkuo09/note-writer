@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase-server'
 
-export async function GET() {
-  // 1. Auth — require chapter_lead role
+export async function GET(req: NextRequest) {
+  // 1. Auth — require chapter_lead or admin role
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -13,12 +13,27 @@ export async function GET() {
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'chapter_lead') {
+  const isAdmin = profile?.role === 'admin'
+  const isChapterLead = profile?.role === 'chapter_lead'
+
+  if (!isAdmin && !isChapterLead) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // 2. No school on their profile — return empty payload
-  const chapterLeadSchool: string | null = profile.school ?? null
+  // 2. Determine which school to view
+  //    - Admins can pass ?school= to view any chapter
+  //    - Chapter leads always see their own school
+  let chapterLeadSchool: string | null = null
+  if (isAdmin) {
+    const schoolParam = req.nextUrl.searchParams.get('school')?.trim() ?? null
+    chapterLeadSchool = schoolParam
+    // If admin didn't pass a school, return empty (they need to pick one)
+    if (!chapterLeadSchool) {
+      return NextResponse.json({ school: null, notes: [], stats: { totalNotes: 0, thisMonthNotes: 0, volunteerCount: 0, leaderboard: [] } })
+    }
+  } else {
+    chapterLeadSchool = profile?.school ?? null
+  }
   if (!chapterLeadSchool) {
     return NextResponse.json({ school: null, notes: [], stats: {} })
   }

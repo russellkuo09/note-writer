@@ -423,13 +423,21 @@ export default function AdminPage() {
           </button>
         )}
 
-        {/* Volunteer Hours */}
-        <button
-          onClick={() => window.open('/admin/volunteers', '_blank')}
-          className="w-full py-3 rounded-2xl bg-white text-charcoal/70 font-body font-semibold text-sm border border-cream-dark hover:border-primary/30 transition-all animate-fade-in-up stagger-2"
-        >
-          📊 Volunteer Hours
-        </button>
+        {/* Quick links row */}
+        <div className="grid grid-cols-2 gap-3 animate-fade-in-up stagger-2">
+          <button
+            onClick={() => window.open('/admin/volunteers', '_blank')}
+            className="py-3 rounded-2xl bg-white text-charcoal/70 font-body font-semibold text-sm border border-cream-dark hover:border-primary/30 transition-all"
+          >
+            📊 Volunteer Hours
+          </button>
+          <button
+            onClick={() => window.open('/chapter', '_blank')}
+            className="py-3 rounded-2xl bg-white text-charcoal/70 font-body font-semibold text-sm border border-cream-dark hover:border-primary/30 transition-all"
+          >
+            🏫 Chapter View
+          </button>
+        </div>
 
         {/* Schools breakdown */}
         <div className="bg-white rounded-2xl border border-cream-dark overflow-hidden animate-fade-in-up stagger-2">
@@ -458,8 +466,14 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {schoolStats.map((s) => (
-                    <tr key={s.school} className="border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
-                      <td className="px-4 py-3 font-semibold text-charcoal text-sm">{s.school}</td>
+                    <tr
+                      key={s.school}
+                      className="border-b border-cream-dark last:border-0 hover:bg-blush/30 transition-colors cursor-pointer"
+                      onClick={() => window.open(`/chapter?school=${encodeURIComponent(s.school)}`, '_blank')}
+                    >
+                      <td className="px-4 py-3 font-semibold text-charcoal text-sm">
+                        <span className="text-primary hover:underline">{s.school}</span>
+                      </td>
                       <td className="px-3 py-3 text-center text-charcoal/70">{s.volunteers}</td>
                       <td className="px-3 py-3 text-center font-bold text-primary">{s.totalNotes}</td>
                       <td className="px-3 py-3 text-center">
