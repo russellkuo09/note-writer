@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient, isDemoMode } from '@/lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,7 @@ import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
 import { HOSPITALS, MINUTES_PER_NOTE, BADGES } from '@/types'
 import type { Note, Hospital } from '@/types'
+import type { SchoolResult } from '@/app/api/school-search/route'
 
 // ── Demo data ─────────────────────────────────────────────────────────────
 const DEMO_NOTES: Note[] = [
@@ -27,6 +28,7 @@ interface ProfileData {
   referral_code: string | null
   referral_count: number
   referral_bonus_minutes: number
+  school: string | null
 }
 
 // Compute effective streak: only count it if the user wrote today or yesterday
@@ -46,6 +48,16 @@ export default function ImpactPage() {
   const [referralCopied, setReferralCopied] = useState(false)
   const [referralBannerDismissed, setReferralBannerDismissed] = useState(false)
   const shareCardRef = useRef<HTMLDivElement>(null)
+
+  // School search
+  const [schoolQuery, setSchoolQuery] = useState('')
+  const [schoolResults, setSchoolResults] = useState<SchoolResult[]>([])
+  const [schoolSearching, setSchoolSearching] = useState(false)
+  const [schoolSaving, setSchoolSaving] = useState(false)
+  const [schoolSaved, setSchoolSaved] = useState(false)
+  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false)
+  const schoolDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const schoolInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const demoMode = isDemoMode()
   const supabase = createClient()
@@ -53,7 +65,7 @@ export default function ImpactPage() {
   useEffect(() => {
     if (demoMode) {
       setUser({ id: 'demo', email: 'demo@example.com' } as User)
-      setProfile({ name: 'Demo', role: 'admin', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 })
+      setProfile({ name: 'Demo', role: 'admin', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60, school: null })
       fetchNotes('demo')
       return
     }
@@ -72,13 +84,17 @@ export default function ImpactPage() {
   }, [])
 
   async function fetchProfile(userId: string) {
-    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60 }); return }
+    if (demoMode) { setProfile({ name: 'Demo User', role: 'supporter', current_streak: 3, longest_streak: 5, last_note_date: new Date().toISOString().slice(0, 10), referral_code: 'abc12345', referral_count: 2, referral_bonus_minutes: 60, school: null }); return }
     const { data } = await supabase
       .from('profiles')
-      .select('name, role, current_streak, longest_streak, last_note_date, referral_code, referral_count, referral_bonus_minutes')
+      .select('name, role, current_streak, longest_streak, last_note_date, referral_code, referral_count, referral_bonus_minutes, school')
       .eq('id', userId)
       .single()
-    if (data) setProfile(data as ProfileData)
+    if (data) {
+      const p = data as ProfileData
+      setProfile(p)
+      if (p.school) setSchoolQuery(p.school)
+    }
   }
 
   async function fetchNotes(userId: string) {
@@ -119,6 +135,35 @@ export default function ImpactPage() {
   const referralLink = profile?.referral_code
     ? `https://notesforfighters.vercel.app?ref=${profile.referral_code}`
     : null
+
+  // Debounced school search
+  const searchSchools = useCallback((q: string) => {
+    if (schoolDebounceRef.current) clearTimeout(schoolDebounceRef.current)
+    if (q.trim().length < 2) { setSchoolResults([]); setSchoolSearching(false); return }
+    setSchoolSearching(true)
+    schoolDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/school-search?q=${encodeURIComponent(q)}`)
+        const data = await res.json()
+        setSchoolResults(data)
+        setShowSchoolDropdown(data.length > 0)
+      } catch { setSchoolResults([]) }
+      finally { setSchoolSearching(false) }
+    }, 350)
+  }, [])
+
+  async function saveSchool(name: string) {
+    setShowSchoolDropdown(false)
+    setSchoolQuery(name)
+    setSchoolResults([])
+    if (!user || demoMode) return
+    setSchoolSaving(true)
+    await supabase.from('profiles').update({ school: name }).eq('id', user.id)
+    setSchoolSaving(false)
+    setSchoolSaved(true)
+    setTimeout(() => setSchoolSaved(false), 2500)
+    setProfile(prev => prev ? { ...prev, school: name } : prev)
+  }
 
   async function copyReferralLink() {
     if (!referralLink) return
@@ -230,6 +275,83 @@ export default function ImpactPage() {
           )}
           {(profile?.longest_streak ?? 0) > 0 && (
             <p className="font-body text-xs text-charcoal/40 mt-2">Longest streak: {profile?.longest_streak} days</p>
+          )}
+        </div>
+
+        {/* School */}
+        <div className="bg-white rounded-3xl border border-cream-dark p-5 animate-fade-in-up stagger-1">
+          <p className="font-body text-xs font-semibold text-charcoal/50 uppercase tracking-wide mb-3">
+            My School
+          </p>
+          <p className="font-body text-xs text-charcoal/40 mb-3">
+            Add your school so Russell can track each campus&apos;s impact 🏫
+          </p>
+          <div className="relative">
+            <div className="relative flex items-center">
+              <input
+                ref={schoolInputRef}
+                type="text"
+                value={schoolQuery}
+                onChange={(e) => {
+                  setSchoolQuery(e.target.value)
+                  setSchoolSaved(false)
+                  searchSchools(e.target.value)
+                }}
+                onFocus={() => { if (schoolResults.length > 0) setShowSchoolDropdown(true) }}
+                onBlur={() => setTimeout(() => setShowSchoolDropdown(false), 150)}
+                placeholder="Search for your school…"
+                className="w-full border border-cream-dark rounded-2xl px-4 py-3 font-body text-sm text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-primary/50 pr-24"
+              />
+              <div className="absolute right-3 flex items-center gap-1.5">
+                {schoolSearching && (
+                  <span className="text-xs text-charcoal/30 animate-pulse">searching…</span>
+                )}
+                {schoolSaving && (
+                  <span className="text-xs text-charcoal/30">saving…</span>
+                )}
+                {schoolSaved && (
+                  <span className="text-xs text-sage font-semibold">✓ Saved</span>
+                )}
+                {schoolQuery && !schoolSearching && !schoolSaving && !schoolSaved && schoolQuery !== profile?.school && (
+                  <button
+                    onMouseDown={(e) => { e.preventDefault(); saveSchool(schoolQuery) }}
+                    className="text-xs font-semibold text-primary"
+                  >
+                    Save
+                  </button>
+                )}
+                {schoolQuery && (
+                  <button
+                    onMouseDown={(e) => { e.preventDefault(); setSchoolQuery(''); setSchoolResults([]); setShowSchoolDropdown(false) }}
+                    className="text-xs text-charcoal/30 hover:text-charcoal/60"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Dropdown */}
+            {showSchoolDropdown && schoolResults.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-cream-dark rounded-2xl shadow-lg z-20 overflow-hidden">
+                {schoolResults.map((r) => (
+                  <button
+                    key={r.id}
+                    onMouseDown={(e) => { e.preventDefault(); saveSchool(r.name) }}
+                    className="w-full text-left px-4 py-3 hover:bg-cream/60 transition-colors border-b border-cream-dark last:border-0"
+                  >
+                    <p className="font-body text-sm font-semibold text-charcoal leading-tight">{r.name}</p>
+                    <p className="font-body text-xs text-charcoal/40 mt-0.5 leading-tight">{r.address}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {profile?.school && (
+            <p className="font-body text-xs text-charcoal/40 mt-2">
+              Currently saved: <span className="font-semibold text-charcoal/60">{profile.school}</span>
+            </p>
           )}
         </div>
 

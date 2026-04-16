@@ -24,10 +24,15 @@ export async function GET() {
 
   const svc = createServiceClient()
 
-  // Fetch all profiles with school field
-  const { data: profiles } = await svc
-    .from('profiles')
-    .select('id, school')
+  // Fetch all profiles — gracefully handle missing school column
+  let profiles: Array<{ id: string; school?: string | null }> = []
+  const withSchool = await svc.from('profiles').select('id, school')
+  if (!withSchool.error && withSchool.data) {
+    profiles = withSchool.data
+  } else {
+    // school column not yet migrated — return empty, nothing to show
+    return NextResponse.json([])
+  }
 
   // Fetch all non-archived notes
   const { data: notes } = await svc
@@ -35,7 +40,7 @@ export async function GET() {
     .select('author_id, created_at')
     .neq('status', 'archived')
 
-  if (!profiles || !notes) {
+  if (!notes) {
     return NextResponse.json([])
   }
 

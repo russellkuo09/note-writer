@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import Logo from './Logo'
+import type { SchoolResult } from '@/app/api/school-search/route'
 
 interface AuthModalProps {
   onClose?: () => void
@@ -16,6 +17,10 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [password, setPassword] = useState('')
   const [location, setLocation] = useState('')
   const [school, setSchool] = useState('')
+  const [schoolResults, setSchoolResults] = useState<SchoolResult[]>([])
+  const [schoolSearching, setSchoolSearching] = useState(false)
+  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false)
+  const schoolDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
@@ -24,6 +29,21 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [resetLoading, setResetLoading] = useState(false)
 
   const supabase = createClient()
+
+  function searchSchools(q: string) {
+    if (schoolDebounceRef.current) clearTimeout(schoolDebounceRef.current)
+    if (q.trim().length < 2) { setSchoolResults([]); setSchoolSearching(false); return }
+    setSchoolSearching(true)
+    schoolDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/school-search?q=${encodeURIComponent(q)}`)
+        const data = await res.json()
+        setSchoolResults(data)
+        setShowSchoolDropdown(data.length > 0)
+      } catch { setSchoolResults([]) }
+      finally { setSchoolSearching(false) }
+    }, 350)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -197,17 +217,39 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
                 />
                 <p className="text-xs font-body text-charcoal/40 mt-1 ml-1">Helps us show our reach 🌷</p>
               </div>
-              <div>
+              <div className="relative">
                 <label className="block text-xs font-body font-semibold text-charcoal/60 mb-1 uppercase tracking-wide">
                   What school do you go to? <span className="normal-case font-normal">(optional)</span>
                 </label>
-                <input
-                  type="text"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value.slice(0, 100))}
-                  placeholder="e.g. Ayala High School, Diamond Bar High School"
-                  className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={school}
+                    onChange={(e) => { setSchool(e.target.value.slice(0, 100)); searchSchools(e.target.value) }}
+                    onFocus={() => { if (schoolResults.length > 0) setShowSchoolDropdown(true) }}
+                    onBlur={() => setTimeout(() => setShowSchoolDropdown(false), 150)}
+                    placeholder="e.g. Diamond Bar High School"
+                    className="w-full px-4 py-3 rounded-2xl bg-cream border border-cream-dark font-body text-base text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-2 focus:ring-primary/30 pr-24"
+                  />
+                  {schoolSearching && (
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-charcoal/30 animate-pulse">searching…</span>
+                  )}
+                </div>
+                {showSchoolDropdown && schoolResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-cream-dark rounded-2xl shadow-lg z-50 overflow-hidden">
+                    {schoolResults.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); setSchool(r.name); setShowSchoolDropdown(false); setSchoolResults([]) }}
+                        className="w-full text-left px-4 py-3 hover:bg-cream/60 transition-colors border-b border-cream-dark last:border-0"
+                      >
+                        <p className="font-body text-sm font-semibold text-charcoal leading-tight">{r.name}</p>
+                        <p className="font-body text-xs text-charcoal/40 mt-0.5 leading-tight">{r.address}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
