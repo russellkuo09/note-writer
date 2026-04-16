@@ -7,15 +7,32 @@ export interface SchoolResult {
   displayName: string
 }
 
+// Only show results that look like high schools
+function isHighSchool(name: string): boolean {
+  const n = name.toLowerCase()
+  return (
+    n.includes('high school') ||
+    (n.includes('high') && (n.includes('school') || n.includes('hs'))) ||
+    n.includes('preparatory') ||
+    n.includes('prep school') ||
+    n.endsWith(' high') ||
+    n.includes(' high ') ||
+    /\bhs\b/.test(n)
+  )
+}
+
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim()
   if (!q || q.length < 2) return NextResponse.json([])
 
   try {
+    // Bias the query toward high schools
+    const biased = /high|school|prep|hs\b/i.test(q) ? q : `${q} high school`
+
     const url =
       `https://nominatim.openstreetmap.org/search` +
-      `?q=${encodeURIComponent(q)}` +
-      `&addressdetails=1&limit=8&format=json&dedupe=1`
+      `?q=${encodeURIComponent(biased)}` +
+      `&addressdetails=1&limit=12&format=json&dedupe=1`
 
     const res = await fetch(url, {
       headers: {
@@ -35,28 +52,28 @@ export async function GET(req: NextRequest) {
       address: Record<string, string>
     }> = await res.json()
 
-    // Parse + deduplicate results
     const seen = new Set<string>()
     const results: SchoolResult[] = []
 
     for (const item of data) {
       const parts = item.display_name.split(',').map(s => s.trim())
       const name = parts[0]
-      // Build a short address: city/town + state/county + country (max 3 segments)
-      const addrParts = parts.slice(1).filter(p =>
-        !p.match(/^\d{5}/) // skip zip codes
-        && p.length > 1
-      ).slice(0, 3)
-      const address = addrParts.join(', ')
+
+      // Skip non-high-school results
+      if (!isHighSchool(name)) continue
 
       const key = name.toLowerCase()
       if (seen.has(key)) continue
       seen.add(key)
 
+      const addrParts = parts.slice(1).filter(p =>
+        !p.match(/^\d{5}/) && p.length > 1
+      ).slice(0, 3)
+
       results.push({
         id: String(item.place_id),
         name,
-        address,
+        address: addrParts.join(', '),
         displayName: item.display_name,
       })
 
