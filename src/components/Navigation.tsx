@@ -5,14 +5,16 @@ import { usePathname } from 'next/navigation'
 
 interface NavigationProps {
   isAdmin?: boolean
+  isChapterLead?: boolean
 }
 
-export default function Navigation({ isAdmin = false }: NavigationProps) {
+export default function Navigation({ isAdmin = false, isChapterLead = false }: NavigationProps) {
   const pathname = usePathname()
 
   const tabs = [
     { href: '/', label: 'Write', icon: '✏️' },
     { href: '/impact', label: 'My Impact', icon: '🌷' },
+    ...(isChapterLead ? [{ href: '/chapter', label: 'Chapter', icon: '🏫' }] : []),
     ...(isAdmin ? [{ href: '/admin', label: 'Queue', icon: '📋' }] : []),
   ]
 

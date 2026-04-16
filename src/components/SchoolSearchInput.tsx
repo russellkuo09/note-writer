@@ -22,11 +22,20 @@ export default function SchoolSearchInput({
   savedSchool,
 }: Props) {
   const [results, setResults] = useState<SchoolResult[]>([])
+  const [popularSchools, setPopularSchools] = useState<SchoolResult[]>([])
   const [searching, setSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Pre-load popular schools on mount
+  useEffect(() => {
+    fetch('/api/school-search?popular=1')
+      .then(r => r.json())
+      .then((data: SchoolResult[]) => setPopularSchools(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [])
 
   const search = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -68,7 +77,10 @@ export default function SchoolSearchInput({
     setResults([])
   }
 
-  const dropdown = showDropdown && results.length > 0 && dropdownRect
+  // Show popular schools when focused and no query typed yet
+  const displayResults = value.trim().length < 2 ? popularSchools : results
+
+  const dropdown = showDropdown && displayResults.length > 0 && dropdownRect
     ? createPortal(
         <div
           style={{
@@ -80,7 +92,10 @@ export default function SchoolSearchInput({
           }}
           className="bg-white border border-cream-dark rounded-2xl shadow-xl overflow-hidden"
         >
-          {results.map((r) => (
+          {value.trim().length < 2 && popularSchools.length > 0 && (
+            <p className="px-4 pt-2 pb-1 font-body text-xs text-charcoal/40 uppercase tracking-wide">Popular schools</p>
+          )}
+          {displayResults.map((r) => (
             <button
               key={r.id}
               type="button"
@@ -104,11 +119,14 @@ export default function SchoolSearchInput({
           type="text"
           value={value}
           onChange={(e) => { onChange(e.target.value.slice(0, 100)); search(e.target.value) }}
-          onFocus={() => { if (results.length > 0 && inputRef.current) {
-            const rect = inputRef.current.getBoundingClientRect()
-            setDropdownRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width })
-            setShowDropdown(true)
-          }}}
+          onFocus={() => {
+            if (inputRef.current) {
+              const rect = inputRef.current.getBoundingClientRect()
+              setDropdownRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width })
+              // Show popular schools even before typing
+              if (displayResults.length > 0) setShowDropdown(true)
+            }
+          }}
           onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           placeholder={placeholder}
           className={`w-full ${className}`}

@@ -458,7 +458,7 @@ export default function ImpactPage() {
         )}
       </div>
 
-      <Navigation isAdmin={profile?.role === 'admin'} />
+      <Navigation isAdmin={profile?.role === 'admin'} isChapterLead={profile?.role === 'chapter_lead'} />
     </div>
   )
 }
