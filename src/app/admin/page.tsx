@@ -52,6 +52,15 @@ export default function AdminPage() {
   const [schoolStats, setSchoolStats] = useState<SchoolStat[]>([])
   const [schoolStatsLoaded, setSchoolStatsLoaded] = useState(false)
 
+  // Print permission — only these accounts can print
+  const PRINT_ALLOWED_EMAILS = [
+    'pghrussellkuo@gmail.com',
+    'abelchen919@gmail.com',
+    'julianne_kawasaki@icloud.com',
+    'wellynwong55@gmail.com',
+  ]
+  const [canPrint, setCanPrint] = useState(false)
+
   const router = useRouter()
   const demoMode = isDemoMode()
   const supabase = createClient()
@@ -77,6 +86,8 @@ export default function AdminPage() {
         setLoading(false)
         return
       }
+
+      if (PRINT_ALLOWED_EMAILS.includes(user.email ?? '')) setCanPrint(true)
 
       fetchNotes()
       fetch('/api/admin/school-stats')
@@ -411,8 +422,8 @@ export default function AdminPage() {
           })}
         </div>
 
-        {/* Batch print button */}
-        {queuedCount(activeTab === 'all' ? undefined : activeTab) > 0 && (
+        {/* Batch print button — restricted to approved printers */}
+        {canPrint && queuedCount(activeTab === 'all' ? undefined : activeTab) > 0 && (
           <button
             onClick={openPrintModal}
             disabled={printing}

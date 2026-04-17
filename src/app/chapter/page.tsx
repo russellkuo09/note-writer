@@ -52,6 +52,14 @@ function ChapterContent() {
   const [allSchools, setAllSchools] = useState<SchoolStat[]>([])
   const [selectedSchool, setSelectedSchool] = useState<string>('')
 
+  // Print state
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [printCount, setPrintCount] = useState(1)
+  const [printOrder, setPrintOrder] = useState<'oldest' | 'newest'>('oldest')
+  const [printing, setPrinting] = useState(false)
+  const [lastPrintedIds, setLastPrintedIds] = useState<string[]>([])
+  const [confirmPrint, setConfirmPrint] = useState(false)
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -117,6 +125,62 @@ function ChapterContent() {
     await loadChapterData(s)
   }
 
+  // ── Print helpers ─────────────────────────────────────────────────────────
+  const queuedNotes = notes.filter(n => n.status === 'queued')
+  const sortedForPrint = [...queuedNotes].sort((a, b) =>
+    printOrder === 'oldest'
+      ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )
+  const safePrintCount = Math.min(Math.max(1, printCount), queuedNotes.length)
+
+  function openPrintModal() {
+    if (queuedNotes.length === 0) return
+    setPrintCount(queuedNotes.length)
+    setPrintOrder('oldest')
+    setShowPrintModal(true)
+  }
+
+  async function executePrint() {
+    setShowPrintModal(false)
+    const batch = sortedForPrint.slice(0, safePrintCount)
+    if (batch.length === 0) return
+    setPrinting(true)
+    try {
+      const res = await fetch('/api/admin/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: batch, hospital: null, branding: 'flowers' }),
+      })
+      if (!res.ok) throw new Error('Print failed')
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+      setLastPrintedIds(batch.map(n => n.id))
+      setConfirmPrint(true)
+    } catch {
+      alert('Something went wrong generating the print file.')
+    } finally {
+      setPrinting(false)
+    }
+  }
+
+  async function confirmMarkPrinted() {
+    const supabaseClient = createClient()
+    await Promise.all(
+      lastPrintedIds.map(id =>
+        supabaseClient.from('notes').update({ status: 'printed', printed_at: new Date().toISOString() }).eq('id', id)
+      )
+    )
+    setNotes(prev => prev.map(n =>
+      lastPrintedIds.includes(n.id) ? { ...n, status: 'printed' as const, printed_at: new Date().toISOString() } : n
+    ))
+    setConfirmPrint(false)
+    setLastPrintedIds([])
+  }
+
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -149,15 +213,94 @@ function ChapterContent() {
   return (
     <div className="min-h-screen bg-background pb-32">
 
+      {/* Print config modal */}
+      {showPrintModal && (
+        <div className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-fade-in-up space-y-5">
+            <h2 className="font-display text-xl font-bold text-charcoal">Print Notes 🖨️</h2>
+
+            <div className="space-y-2">
+              <label className="font-body text-sm font-semibold text-charcoal/70">How many notes?</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range" min={1} max={queuedNotes.length}
+                  value={printCount}
+                  onChange={e => setPrintCount(Number(e.target.value))}
+                  className="flex-1 accent-primary"
+                />
+                <span className="font-display text-lg font-bold text-primary w-8 text-right">{safePrintCount}</span>
+              </div>
+              <p className="font-body text-xs text-charcoal/40">{queuedNotes.length} queued from your school</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-body text-sm font-semibold text-charcoal/70">Print order</label>
+              <div className="flex gap-2">
+                {(['oldest', 'newest'] as const).map(o => (
+                  <button key={o} onClick={() => setPrintOrder(o)}
+                    className={`flex-1 py-2 rounded-xl font-body text-sm font-semibold border transition-all ${
+                      printOrder === o ? 'bg-primary text-white border-primary' : 'bg-white text-charcoal/60 border-cream-dark'
+                    }`}
+                  >{o === 'oldest' ? 'Oldest first' : 'Newest first'}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowPrintModal(false)}
+                className="flex-1 py-3 rounded-2xl font-body font-semibold text-sm text-charcoal/60 border border-cream-dark">
+                Cancel
+              </button>
+              <button onClick={executePrint}
+                className="flex-1 py-3 rounded-2xl font-body font-bold text-sm text-white bg-primary"
+                style={{ boxShadow: '0 4px 16px rgba(232,99,122,0.3)' }}>
+                Print {safePrintCount} {safePrintCount === 1 ? 'note' : 'notes'} 🖨️
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm printed banner */}
+      {confirmPrint && (
+        <div className="fixed bottom-24 left-0 right-0 z-50 flex justify-center px-4">
+          <div className="bg-charcoal text-white rounded-2xl px-5 py-4 shadow-xl max-w-sm w-full animate-fade-in-up">
+            <p className="font-body text-sm font-semibold mb-3">Did the notes print successfully?</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmPrint(false)}
+                className="flex-1 py-2 rounded-xl font-body text-sm text-white/60 border border-white/20">
+                Not yet
+              </button>
+              <button onClick={confirmMarkPrinted}
+                className="flex-1 py-2 rounded-xl font-body font-bold text-sm bg-sage text-white">
+                ✓ Mark printed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-cream-dark px-4 py-3 safe-top">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <Logo size="sm" />
-          <span className={`font-body text-xs px-2 py-1 rounded-full font-semibold ${
-            isAdmin ? 'bg-primary/10 text-primary' : 'bg-sage/20 text-sage'
-          }`}>
-            {isAdmin ? 'Admin View' : 'Chapter Lead'}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* Print button — chapter leads only (not admin monitoring view) */}
+            {!isAdmin && queuedNotes.length > 0 && (
+              <button
+                onClick={openPrintModal}
+                disabled={printing}
+                className="font-body text-xs font-semibold px-3 py-1.5 rounded-xl bg-charcoal text-white disabled:opacity-50 transition-all"
+              >
+                {printing ? '⏳...' : `🖨️ Print (${queuedNotes.length})`}
+              </button>
+            )}
+            <span className={`font-body text-xs px-2 py-1 rounded-full font-semibold ${
+              isAdmin ? 'bg-primary/10 text-primary' : 'bg-sage/20 text-sage'
+            }`}>
+              {isAdmin ? 'Admin View' : 'Chapter Lead'}
+            </span>
+          </div>
         </div>
       </div>
 

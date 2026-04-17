@@ -4,11 +4,11 @@ import type { Note } from '@/types'
 import { HOSPITALS } from '@/types'
 import QRCode from 'qrcode'
 
-async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
+async function requireAdminOrChapterLead(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!profile || profile.role !== 'admin') return null
+  if (!profile || (profile.role !== 'admin' && profile.role !== 'chapter_lead')) return null
   return user
 }
 
@@ -259,8 +259,8 @@ export async function POST(req: NextRequest) {
   const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === ''
 
   if (!isDemoMode) {
-    const admin = await requireAdmin(supabase)
-    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const caller = await requireAdminOrChapterLead(supabase)
+    if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { notes, hospital, branding } = await req.json() as { notes: Note[]; hospital: string | null; branding?: 'flowers' | 'notes' }
