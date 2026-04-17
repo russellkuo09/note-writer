@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
+import NoteActivityGraph from '@/components/NoteActivityGraph'
 import { HOSPITALS } from '@/types'
 import type { Note } from '@/types'
 
@@ -216,6 +217,17 @@ function ChapterContent() {
             <p className="font-body text-xs text-charcoal/60 mt-0.5">Volunteers</p>
           </div>
         </div>
+
+        {/* Note Activity Graph */}
+        {school && (
+          <div className="bg-white rounded-3xl border border-cream-dark p-4 animate-fade-in-up stagger-2">
+            <NoteActivityGraph
+              lockedSchool={school}
+              title={`${school} Note Activity`}
+              isAdmin={isAdmin}
+            />
+          </div>
+        )}
 
         {/* Notes list card */}
         <div className="bg-white rounded-3xl border border-cream-dark overflow-hidden animate-fade-in-up stagger-2">

@@ -7,6 +7,7 @@ import { createClient, isDemoMode } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
+import NoteActivityGraph from '@/components/NoteActivityGraph'
 import { HOSPITALS, HOSPITAL_SLUGS, MINUTES_PER_NOTE } from '@/types'
 import type { Hospital, Note, NoteStatus } from '@/types'
 
@@ -437,6 +438,11 @@ export default function AdminPage() {
           >
             🏫 Chapter View
           </button>
+        </div>
+
+        {/* Note Activity */}
+        <div className="bg-white rounded-2xl border border-cream-dark p-4 animate-fade-in-up stagger-2">
+          <NoteActivityGraph isAdmin title="📈 Note Activity" />
         </div>
 
         {/* Schools breakdown */}
