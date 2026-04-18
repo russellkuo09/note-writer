@@ -1,7 +1,7 @@
 // Flowers for Fighters — Service Worker
 // Enables offline note drafting and PWA installability
 
-const CACHE_NAME = 'fff-notes-v1'
+const CACHE_NAME = 'fff-notes-v2'
 const OFFLINE_FALLBACK = '/'
 
 // Assets to cache on install
