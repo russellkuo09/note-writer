@@ -25,7 +25,7 @@ export default function ForYouPage() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        fontFamily: 'Nunito, sans-serif',
+        fontFamily: 'var(--font-body), sans-serif',
       }}
     >
       <div style={{ width: '100%', maxWidth: 480, padding: '0 24px', paddingBottom: 60 }}>
@@ -46,7 +46,7 @@ export default function ForYouPage() {
           <div style={{ fontSize: 64, marginBottom: 20, lineHeight: 1 }}>🌷</div>
           <h1
             style={{
-              fontFamily: 'Playfair Display, Georgia, serif',
+              fontFamily: 'var(--font-playfair), Georgia, serif',
               fontSize: 32,
               fontWeight: 700,
               color: '#1A1A2E',
@@ -111,14 +111,14 @@ export default function ForYouPage() {
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
             <div>
-              <p style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 48, fontWeight: 700, color: 'white', lineHeight: 1, marginBottom: 4 }}>
+              <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: 48, fontWeight: 700, color: 'white', lineHeight: 1, marginBottom: 4 }}>
                 {stats ? stats.total_notes : '—'}
               </p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Notes Written</p>
             </div>
             <div style={{ width: 1, background: 'rgba(255,255,255,0.3)' }} />
             <div>
-              <p style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 48, fontWeight: 700, color: 'white', lineHeight: 1, marginBottom: 4 }}>
+              <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: 48, fontWeight: 700, color: 'white', lineHeight: 1, marginBottom: 4 }}>
                 {stats ? stats.fighters_reached : '—'}
               </p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Fighters Reached</p>
@@ -140,7 +140,7 @@ export default function ForYouPage() {
             textAlign: 'center',
           }}
         >
-          <p style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 20, fontStyle: 'italic', color: '#1A1A2E', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: 20, fontStyle: 'italic', color: '#1A1A2E', lineHeight: 1.6 }}>
             &ldquo;Keep fighting. You are braver than you know, and stronger than you feel. We are rooting for you.&rdquo;
           </p>
           <p style={{ fontSize: 13, color: '#E8637A', fontWeight: 600, marginTop: 12 }}>
@@ -160,7 +160,7 @@ export default function ForYouPage() {
               display: 'inline-block',
               background: '#E8637A',
               color: 'white',
-              fontFamily: 'Nunito, sans-serif',
+              fontFamily: 'var(--font-body), sans-serif',
               fontWeight: 700,
               fontSize: 17,
               padding: '16px 40px',

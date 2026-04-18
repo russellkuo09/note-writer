@@ -14,7 +14,7 @@ export default function BrandText({ variant = 'flowers', className = '' }: Brand
     <span
       className={className}
       style={{
-        fontFamily: '"Dancing Script", cursive',
+        fontFamily: 'var(--font-dancing), cursive',
         fontWeight: 700,
         fontSize: 30,
         color: '#E8637A',

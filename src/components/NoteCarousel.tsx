@@ -45,7 +45,7 @@ function NoteCard({ note }: { note: FeedNote }) {
 
       {/* Header */}
       <div style={{ marginBottom: 10 }}>
-        <div style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 20, color: '#E8637A', lineHeight: 1.1, marginBottom: 4 }}>
+        <div style={{ fontFamily: 'var(--font-dancing), cursive', fontWeight: 700, fontSize: 20, color: '#E8637A', lineHeight: 1.1, marginBottom: 4 }}>
           Notes for Fighters
         </div>
         <div style={{ width: '100%', height: 1, background: '#F9DDE0' }} />
@@ -53,13 +53,13 @@ function NoteCard({ note }: { note: FeedNote }) {
 
       {/* Note body */}
       <div style={{ flex: 1, padding: '10px 0 14px 0' }}>
-        <p style={{ fontFamily: '"Playfair Display", Georgia, serif', fontSize: 13, lineHeight: 1.85, color: '#1A1A2E', margin: 0 }}>
+        <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontSize: 13, lineHeight: 1.85, color: '#1A1A2E', margin: 0 }}>
           {note.body}
         </p>
       </div>
 
       {/* Signature */}
-      <div style={{ fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#E8637A' }}>
+      <div style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontStyle: 'italic', fontSize: 11, color: '#E8637A' }}>
         — {firstName}, Notes for Fighters Volunteer
       </div>
     </div>

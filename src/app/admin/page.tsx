@@ -294,7 +294,7 @@ export default function AdminPage() {
                   onClick={() => setSelectedBranding('flowers')}
                   className={`rounded-2xl p-3 border-2 text-left transition-all ${selectedBranding === 'flowers' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
                 >
-                  <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
+                  <p style={{ fontFamily: 'var(--font-dancing), cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
                     Flowers for Fighters
                   </p>
                   <p className="font-body text-xs text-charcoal/40">Bouquet deliveries 🌷</p>
@@ -303,7 +303,7 @@ export default function AdminPage() {
                   onClick={() => setSelectedBranding('notes')}
                   className={`rounded-2xl p-3 border-2 text-left transition-all ${selectedBranding === 'notes' ? 'border-primary bg-blush/30' : 'border-cream-dark bg-white'}`}
                 >
-                  <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
+                  <p style={{ fontFamily: 'var(--font-dancing), cursive', fontWeight: 700, fontSize: 13, color: '#E8637A', lineHeight: 1.2 }} className="mb-0.5">
                     Notes for Fighters
                   </p>
                   <p className="font-body text-xs text-charcoal/40">Notes-only deliveries ✉️</p>

@@ -1,6 +1,37 @@
 import type { Metadata, Viewport } from 'next'
+import { Dancing_Script, Nunito, Playfair_Display, Poppins } from 'next/font/google'
 import './globals.css'
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-body',
+  display: 'swap',
+})
+
+const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-dancing',
+  display: 'swap',
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  variable: '--font-playfair',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Flowers for Fighters — Write a Note',
@@ -33,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${poppins.variable} ${nunito.variable} ${dancingScript.variable} ${playfair.variable}`}>
       <head>
         {/* Apple PWA meta tags */}
         <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -506,7 +506,7 @@ export default function WritePage() {
           <span style={{ position: 'absolute', bottom: 48, right: 12, fontSize: 28 }}>🌷</span>
           {/* Header */}
           <div style={{ paddingTop: 24, textAlign: 'center' }}>
-            <p style={{ fontFamily: '"Dancing Script", cursive', fontWeight: 700, color: '#E8637A', lineHeight: 1 }}>
+            <p style={{ fontFamily: 'var(--font-dancing), cursive', fontWeight: 700, color: '#E8637A', lineHeight: 1 }}>
               <span style={{ fontSize: 28 }}>N</span><span style={{ fontSize: 16 }}>otes</span>
               {' '}<span style={{ fontSize: 20 }}>f</span><span style={{ fontSize: 16 }}>or</span>
               {' '}<span style={{ fontSize: 28 }}>F</span><span style={{ fontSize: 16 }}>ighters</span>
@@ -514,19 +514,19 @@ export default function WritePage() {
           </div>
           {/* Blurred note body */}
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 32px' }}>
-            <p style={{ fontFamily: 'Playfair Display, Georgia, serif', fontStyle: 'italic', fontSize: 15, color: '#1A1A2E', textAlign: 'center', lineHeight: 1.6, filter: 'blur(3px)', userSelect: 'none' }}>
+            <p style={{ fontFamily: 'var(--font-playfair), Georgia, serif', fontStyle: 'italic', fontSize: 15, color: '#1A1A2E', textAlign: 'center', lineHeight: 1.6, filter: 'blur(3px)', userSelect: 'none' }}>
               {submitSuccess?.hospital ? `A heartfelt note for a fighter at ${submitSuccess.hospital}` : 'A heartfelt note for a fighter'}
             </p>
           </div>
           {/* Signature */}
           <div style={{ textAlign: 'center', paddingBottom: 8 }}>
-            <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#7BAE8A' }}>
+            <p style={{ fontFamily: 'var(--font-body), sans-serif', fontSize: 12, color: '#7BAE8A' }}>
               — {profile?.name?.split(' ')[0] ?? 'A volunteer'}, Notes for Fighters Volunteer
             </p>
           </div>
           {/* Bottom strip */}
           <div style={{ width: '100%', background: '#E8637A', padding: '10px 0', textAlign: 'center' }}>
-            <p style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: 'white' }}>notesforfighters.vercel.app</p>
+            <p style={{ fontFamily: 'var(--font-body), sans-serif', fontWeight: 700, fontSize: 13, color: 'white' }}>notesforfighters.vercel.app</p>
           </div>
         </div>
 
@@ -625,7 +625,7 @@ export default function WritePage() {
               }}
               placeholder={PLACEHOLDER}
               className="w-full min-h-48 px-5 pt-5 pb-12 font-body text-base text-charcoal placeholder:text-charcoal/30 bg-transparent focus:outline-none leading-relaxed"
-              style={{ fontFamily: 'Nunito, sans-serif' }}
+              style={{ fontFamily: 'var(--font-body), sans-serif' }}
             />
             <div className="absolute bottom-3 right-4 flex items-center gap-3">
               <span

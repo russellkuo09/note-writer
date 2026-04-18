@@ -18,8 +18,8 @@ module.exports = {
         'cream-dark': '#EDE3D6',
       },
       fontFamily: {
-        display: ['Poppins', 'system-ui', 'sans-serif'],
-        body: ['Nunito', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out',
