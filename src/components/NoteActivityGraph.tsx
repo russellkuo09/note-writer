@@ -48,6 +48,86 @@ function daysAgoDate(n: number): string {
 // ── Sort key type ─────────────────────────────────────────────────────────
 type SortKey = 'rank' | 'name' | 'school' | 'thisMonth' | 'allTime' | 'lastActive'
 
+// ── Contact modal ─────────────────────────────────────────────────────────
+function ContactModal({ user, color, onClose }: { user: ActivityUser; color: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-end justify-center p-4 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl w-full max-w-sm animate-fade-in-up overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header strip */}
+        <div className="px-6 pt-6 pb-4 flex items-center gap-4" style={{ borderBottom: '1px solid #F0EAE2' }}>
+          <span
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl font-bold font-body shrink-0"
+            style={{ background: color }}
+          >
+            {user.firstName[0]?.toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="font-display font-bold text-lg text-charcoal leading-tight truncate">{user.name}</p>
+            {user.school && (
+              <p className="font-body text-xs text-charcoal/50 truncate">{user.school}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Contact details */}
+        <div className="px-6 py-4 space-y-3">
+          {user.email && (
+            <a
+              href={`mailto:${user.email}`}
+              className="flex items-center gap-3 group"
+            >
+              <span className="w-8 h-8 rounded-xl bg-blush flex items-center justify-center text-sm shrink-0">✉️</span>
+              <span className="font-body text-sm text-primary group-hover:underline truncate">{user.email}</span>
+            </a>
+          )}
+          {user.location && (
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-xl bg-cream flex items-center justify-center text-sm shrink-0">📍</span>
+              <span className="font-body text-sm text-charcoal/70">{user.location}</span>
+            </div>
+          )}
+          {!user.email && !user.location && (
+            <p className="font-body text-sm text-charcoal/40 text-center py-2">No contact info on file</p>
+          )}
+        </div>
+
+        {/* Stats footer */}
+        <div className="grid grid-cols-3 gap-px bg-cream-dark mx-6 mb-4 rounded-2xl overflow-hidden">
+          <div className="bg-white px-3 py-2.5 text-center">
+            <p className="font-display font-bold text-lg text-primary">{user.totalNotes}</p>
+            <p className="font-body text-xs text-charcoal/50">All time</p>
+          </div>
+          <div className="bg-white px-3 py-2.5 text-center">
+            <p className="font-display font-bold text-lg text-charcoal">{user.thisMonthNotes}</p>
+            <p className="font-body text-xs text-charcoal/50">This month</p>
+          </div>
+          <div className="bg-white px-3 py-2.5 text-center">
+            <p className="font-display font-bold text-sm text-charcoal">
+              {user.lastActive ? new Date(user.lastActive).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+            </p>
+            <p className="font-body text-xs text-charcoal/50">Last active</p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-2xl font-body font-semibold text-sm text-charcoal/60 border border-cream-dark hover:bg-cream transition-all"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface Props {
   /** If provided, locks the school and hides school filter */
   lockedSchool?: string
@@ -113,6 +193,9 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
   // Table sort
   const [sortKey, setSortKey] = useState<SortKey>('allTime')
   const [sortAsc, setSortAsc] = useState(false)
+
+  // Contact modal
+  const [contactUser, setContactUser] = useState<ActivityUser | null>(null)
 
   const fromDate = daysAgoDate(rangeDays - 1)
   const toDate = new Date().toISOString().slice(0, 10)
@@ -189,6 +272,13 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
+      {contactUser && (
+        <ContactModal
+          user={contactUser}
+          color={COLORS[users.findIndex(u => u.authorId === contactUser.authorId) % COLORS.length]}
+          onClose={() => setContactUser(null)}
+        />
+      )}
 
       {/* Header + filters */}
       <div className="flex flex-col gap-3">
@@ -338,15 +428,18 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
                   <tr key={u.authorId} className="border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
                     <td className="px-4 py-3 text-charcoal/40 text-xs font-semibold">{i + 1}</td>
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setContactUser(u)}
+                        className="flex items-center gap-2 hover:opacity-75 transition-opacity text-left"
+                      >
                         <span
                           className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                           style={{ background: COLORS[users.findIndex(uu => uu.authorId === u.authorId) % COLORS.length] }}
                         >
                           {u.firstName[0]?.toUpperCase()}
                         </span>
-                        <span className="font-semibold text-charcoal">{u.name}</span>
-                      </div>
+                        <span className="font-semibold text-charcoal underline decoration-dotted underline-offset-2">{u.name}</span>
+                      </button>
                     </td>
                     {!lockedSchool && (
                       <td className="px-3 py-3 text-charcoal/60 text-xs">{u.school ?? <span className="text-charcoal/30">—</span>}</td>

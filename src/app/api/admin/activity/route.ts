@@ -14,6 +14,8 @@ export interface ActivityUser {
   authorId: string
   name: string
   firstName: string
+  email: string | null
+  location: string | null
   school: string | null
   totalNotes: number
   thisMonthNotes: number
@@ -62,7 +64,7 @@ export async function GET(req: NextRequest) {
     : (params.get('school') ?? null)
 
   // 1. Fetch profiles (with school)
-  let profileQuery = svc.from('profiles').select('id, name, school')
+  let profileQuery = svc.from('profiles').select('id, name, email, location, school')
   if (schoolFilter) profileQuery = profileQuery.eq('school', schoolFilter)
   const { data: profiles } = await profileQuery
 
@@ -70,9 +72,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ users: [], schools: [], dateRange: { from: fromDate, to: toDate } })
   }
 
-  const profileMap: Record<string, { name: string; school: string | null }> = {}
+  const profileMap: Record<string, { name: string; email: string | null; location: string | null; school: string | null }> = {}
   for (const p of profiles) {
-    profileMap[p.id] = { name: p.name ?? 'Unknown', school: p.school ?? null }
+    profileMap[p.id] = { name: p.name ?? 'Unknown', email: p.email ?? null, location: p.location ?? null, school: p.school ?? null }
   }
 
   const memberIds = profiles.map(p => p.id)
@@ -104,6 +106,8 @@ export async function GET(req: NextRequest) {
       authorId: p.id,
       name: profileMap[p.id].name,
       firstName: profileMap[p.id].name.split(' ')[0],
+      email: profileMap[p.id].email,
+      location: profileMap[p.id].location,
       school: profileMap[p.id].school,
       totalNotes: 0,
       thisMonthNotes: 0,
