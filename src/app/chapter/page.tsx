@@ -281,15 +281,13 @@ function ChapterContent() {
               >
                 Close
               </button>
-              {!isAdmin && (
-                <button
-                  onClick={() => archiveNote(selectedNote.id)}
-                  disabled={archiving}
-                  className="flex-1 py-2.5 rounded-2xl font-body font-semibold text-sm text-white bg-charcoal/70 disabled:opacity-50 transition-all"
-                >
-                  {archiving ? '...' : '🗄 Archive'}
-                </button>
-              )}
+              <button
+                onClick={() => archiveNote(selectedNote.id)}
+                disabled={archiving}
+                className="flex-1 py-2.5 rounded-2xl font-body font-semibold text-sm text-white bg-charcoal/70 disabled:opacity-50 transition-all"
+              >
+                {archiving ? '...' : '🗄 Archive'}
+              </button>
             </div>
           </div>
         </div>
