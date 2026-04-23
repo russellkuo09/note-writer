@@ -52,6 +52,10 @@ function ChapterContent() {
   const [allSchools, setAllSchools] = useState<SchoolStat[]>([])
   const [selectedSchool, setSelectedSchool] = useState<string>('')
 
+  // Note detail modal
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
+  const [archiving, setArchiving] = useState(false)
+
   // Print state
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [printCount, setPrintCount] = useState(1)
@@ -167,6 +171,23 @@ function ChapterContent() {
     }
   }
 
+  async function archiveNote(noteId: string) {
+    setArchiving(true)
+    try {
+      const res = await fetch('/api/chapter/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noteId }),
+      })
+      if (res.ok) {
+        setNotes(prev => prev.filter(n => n.id !== noteId))
+        setSelectedNote(null)
+      }
+    } finally {
+      setArchiving(false)
+    }
+  }
+
   async function confirmMarkPrinted() {
     const supabaseClient = createClient()
     await Promise.all(
@@ -212,6 +233,67 @@ function ChapterContent() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
+
+      {/* Note detail modal */}
+      {selectedNote && (
+        <div
+          className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-50 flex items-end justify-center p-4 sm:items-center"
+          onClick={() => setSelectedNote(null)}
+        >
+          <div
+            className="bg-white rounded-3xl w-full max-w-sm animate-fade-in-up overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-5 pt-5 pb-3 border-b border-cream-dark">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="font-body text-sm font-semibold text-charcoal">
+                  {selectedNote.author_name?.split(' ')[0] ?? 'Volunteer'}
+                </span>
+                <span className="font-body text-xs text-charcoal/40">
+                  {new Date(selectedNote.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>
+                <span className="font-body text-xs text-primary bg-blush px-1.5 py-0.5 rounded-full">
+                  {HOSPITALS[selectedNote.hospital] ?? selectedNote.hospital}
+                </span>
+                <span className={`font-body text-xs px-1.5 py-0.5 rounded-full ${
+                  selectedNote.status === 'printed'
+                    ? 'bg-sage/20 text-sage'
+                    : 'bg-cream text-charcoal/50'
+                }`}>
+                  {selectedNote.status}
+                </span>
+              </div>
+            </div>
+
+            {/* Full note body */}
+            <div className="px-5 py-4 max-h-60 overflow-y-auto">
+              <p className="font-body text-sm text-charcoal leading-relaxed whitespace-pre-wrap">
+                {selectedNote.body}
+              </p>
+            </div>
+
+            {/* Actions */}
+            <div className="px-5 pb-5 flex gap-3">
+              <button
+                onClick={() => setSelectedNote(null)}
+                className="flex-1 py-2.5 rounded-2xl font-body font-semibold text-sm text-charcoal/60 border border-cream-dark"
+              >
+                Close
+              </button>
+              {!isAdmin && (
+                <button
+                  onClick={() => archiveNote(selectedNote.id)}
+                  disabled={archiving}
+                  className="flex-1 py-2.5 rounded-2xl font-body font-semibold text-sm text-white bg-charcoal/70 disabled:opacity-50 transition-all"
+                >
+                  {archiving ? '...' : '🗄 Archive'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Print config modal */}
       {showPrintModal && (
@@ -396,7 +478,11 @@ function ChapterContent() {
                   note.body.length > 80 ? note.body.slice(0, 80) + '…' : note.body
 
                 return (
-                  <div key={note.id} className="px-5 py-3 flex items-start gap-3">
+                  <button
+                    key={note.id}
+                    onClick={() => setSelectedNote(note)}
+                    className="w-full px-5 py-3 flex items-start gap-3 text-left hover:bg-cream/40 transition-colors"
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span className="font-body text-sm font-semibold text-charcoal">{firstName}</span>
@@ -407,7 +493,8 @@ function ChapterContent() {
                       </div>
                       <p className="font-body text-sm text-charcoal/60 leading-snug">{truncatedBody}</p>
                     </div>
-                  </div>
+                    <span className="text-charcoal/20 text-xs mt-1 shrink-0">›</span>
+                  </button>
                 )
               })}
             </div>

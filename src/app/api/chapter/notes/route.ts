@@ -112,3 +112,50 @@ export async function GET(req: NextRequest) {
     },
   })
 }
+
+// ── PATCH /api/chapter/notes — archive a note (chapter_lead or admin only) ──
+export async function PATCH(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, school')
+    .eq('id', user.id)
+    .single()
+
+  const isAdmin = profile?.role === 'admin'
+  const isChapterLead = profile?.role === 'chapter_lead'
+  if (!isAdmin && !isChapterLead) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { noteId } = await req.json() as { noteId: string }
+  if (!noteId) return NextResponse.json({ error: 'noteId required' }, { status: 400 })
+
+  const svc = createServiceClient()
+
+  // For chapter leads: verify the note belongs to a member of their school
+  if (isChapterLead) {
+    const school = profile?.school ?? null
+    if (!school) return NextResponse.json({ error: 'No school assigned' }, { status: 403 })
+
+    const { data: note } = await svc.from('notes').select('author_id').eq('id', noteId).single()
+    if (!note) return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+
+    const { data: authorProfile } = await svc
+      .from('profiles').select('school').eq('id', note.author_id).single()
+    if (authorProfile?.school !== school) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
+  const { error } = await svc
+    .from('notes')
+    .update({ status: 'archived' })
+    .eq('id', noteId)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
