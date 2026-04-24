@@ -80,9 +80,7 @@ export default function WritePage() {
         const res = await fetch('/api/public/stats')
         if (!res.ok) throw new Error(`Stats API returned ${res.status}`)
         const data = await res.json() as { total_notes: number; total_volunteers: number }
-        console.log('[fetchStats] API response:', data)
-        console.log('[fetchStats] displaying notes:', 97 + data.total_notes, '  volunteers:', 10 + data.total_volunteers)
-        setGlobalNoteCount(data.total_notes ?? 0)
+setGlobalNoteCount(data.total_notes ?? 0)
         setVolunteerCount(data.total_volunteers ?? 0)
       } catch (err) {
         console.error('[fetchStats] failed, using 0 fallback:', err)
@@ -396,7 +394,7 @@ export default function WritePage() {
             </div>
             <div className="flex-1 bg-blush rounded-3xl px-4 py-5 text-center border border-primary/10">
               <p className="font-display font-bold text-3xl text-primary leading-none mb-1">
-                {(10 + (volunteerCount ?? 0)).toLocaleString()}+
+                {(volunteerCount ?? 0).toLocaleString()}+
               </p>
               <p className="font-body text-xs text-charcoal/50 leading-snug mt-1">👤 volunteers worldwide</p>
             </div>
