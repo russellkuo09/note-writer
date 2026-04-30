@@ -197,6 +197,10 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
   // Contact modal
   const [contactUser, setContactUser] = useState<ActivityUser | null>(null)
 
+  // Table pagination
+  const [showAll, setShowAll] = useState(false)
+  const PAGE_SIZE = 10
+
   const fromDate = daysAgoDate(rangeDays - 1)
   const toDate = new Date().toISOString().slice(0, 10)
 
@@ -260,6 +264,7 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc(a => !a)
     else { setSortKey(key); setSortAsc(false) }
+    setShowAll(false)
   }
 
   function SortIcon({ k }: { k: SortKey }) {
@@ -424,7 +429,7 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((u, i) => (
+                {(showAll ? sortedUsers : sortedUsers.slice(0, PAGE_SIZE)).map((u, i) => (
                   <tr key={u.authorId} className="border-b border-cream-dark last:border-0 hover:bg-cream/30 transition-colors">
                     <td className="px-4 py-3 text-charcoal/40 text-xs font-semibold">{i + 1}</td>
                     <td className="px-3 py-3">
@@ -456,6 +461,18 @@ export default function NoteActivityGraph({ lockedSchool, title, isAdmin = false
               </tbody>
             </table>
           </div>
+
+          {/* Show more / Show less */}
+          {sortedUsers.length > PAGE_SIZE && (
+            <button
+              onClick={() => setShowAll(v => !v)}
+              className="w-full py-3 text-xs font-body font-semibold text-charcoal/50 hover:text-primary hover:bg-cream/40 transition-all border-t border-cream-dark"
+            >
+              {showAll
+                ? '↑ Show less'
+                : `Show ${sortedUsers.length - PAGE_SIZE} more volunteer${sortedUsers.length - PAGE_SIZE !== 1 ? 's' : ''} ↓`}
+            </button>
+          )}
         </div>
       )}
     </div>
