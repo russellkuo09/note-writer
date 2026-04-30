@@ -10,6 +10,13 @@ export interface SchoolResult {
   popularCount?: number
 }
 
+// School name aliases — typing these returns the canonical school name
+// Key: lowercase alias  →  Value: canonical name (must also be in CURATED)
+const SCHOOL_ALIASES: Record<string, string> = {
+  'memorial high school': 'Houston Memorial High School',
+  'memorial hs': 'Houston Memorial High School',
+}
+
 // Curated high schools — always surface correctly regardless of query
 const CURATED: Array<{ name: string; address: string }> = [
   { name: 'Diamond Bar High School', address: 'Diamond Bar, CA' },
@@ -70,7 +77,10 @@ async function getPopularSchools(): Promise<Array<{ name: string; count: number 
 }
 
 export async function GET(req: NextRequest) {
-  const q = req.nextUrl.searchParams.get('q')?.trim() ?? ''
+  const rawQ = req.nextUrl.searchParams.get('q')?.trim() ?? ''
+  // Resolve alias before searching — "Memorial High School" → "Houston Memorial High School"
+  const aliasCanonical = SCHOOL_ALIASES[rawQ.toLowerCase()]
+  const q = aliasCanonical ? aliasCanonical : rawQ
   const popularOnly = req.nextUrl.searchParams.get('popular') === '1'
 
   // Popular-only mode: return top schools from DB (used to pre-fill dropdown)

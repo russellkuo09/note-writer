@@ -12,6 +12,18 @@ import SchoolSearchInput from '@/components/SchoolSearchInput'
 import { HOSPITALS, MINUTES_PER_NOTE, BADGES } from '@/types'
 import type { Note, Hospital } from '@/types'
 
+// ── School name normalization ─────────────────────────────────────────────
+// Map common aliases → canonical school names so DB stays consistent
+const SCHOOL_ALIASES: Record<string, string> = {
+  'memorial high school': 'Houston Memorial High School',
+  'memorial hs': 'Houston Memorial High School',
+}
+
+function normalizeSchoolName(name: string): string {
+  const key = name.trim().toLowerCase()
+  return SCHOOL_ALIASES[key] ?? name.trim()
+}
+
 // ── Demo data ─────────────────────────────────────────────────────────────
 const DEMO_NOTES: Note[] = [
   { id: '1', author_id: 'demo', author_name: 'Demo', hospital: 'shriners', patient_prompt: 'surgery', body: "Hey Fighter — I don't know your name but I want you to know someone out here is rooting for you. Keep fighting. 🌷", status: 'printed', created_at: new Date(Date.now() - 86400000 * 2).toISOString(), printed_at: null, dedication: null },
@@ -131,7 +143,8 @@ export default function ImpactPage() {
     ? `https://notesforfighters.vercel.app?ref=${profile.referral_code}`
     : null
 
-  async function saveSchool(name: string) {
+  async function saveSchool(rawName: string) {
+    const name = normalizeSchoolName(rawName)
     setSchoolQuery(name)
     if (!user || demoMode) return
     setSchoolSaving(true)
