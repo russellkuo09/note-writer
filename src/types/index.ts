@@ -1,10 +1,12 @@
-export type Hospital = 'shriners' | 'whittier' | 'healthbridge' | 'pvhmc'
+export type Hospital = 'shriners' | 'whittier' | 'healthbridge' | 'pvhmc' | 'texas_childrens' | 'la_ronald_mcdonald'
 
 export const HOSPITALS: Record<Hospital, string> = {
   shriners: "Shriners Children's SoCal",
   whittier: 'Whittier Hospital',
   healthbridge: "HealthBridge Children's",
   pvhmc: 'Pomona Valley (PVHMC)',
+  texas_childrens: "Texas Children's Hospital",
+  la_ronald_mcdonald: 'LA Ronald McDonald House',
 }
 
 export const HOSPITAL_SLUGS = Object.keys(HOSPITALS) as Hospital[]
