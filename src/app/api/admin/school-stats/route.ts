@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,24 +26,18 @@ export async function GET() {
   const svc = createServiceClient()
 
   // Fetch all profiles — gracefully handle missing school column
-  let profiles: Array<{ id: string; school?: string | null }> = []
-  const withSchool = await svc.from('profiles').select('id, school')
-  if (!withSchool.error && withSchool.data) {
-    profiles = withSchool.data
-  } else {
+  type ProfileRow = { id: string; school?: string | null }
+  const withSchool = await fetchAllRows<ProfileRow>(() => svc.from('profiles').select('id, school'))
+  if (withSchool.error) {
     // school column not yet migrated — return empty, nothing to show
     return NextResponse.json([])
   }
+  const profiles = withSchool.data
 
   // Fetch all non-archived notes
-  const { data: notes } = await svc
-    .from('notes')
-    .select('author_id, created_at')
-    .neq('status', 'archived')
-
-  if (!notes) {
-    return NextResponse.json([])
-  }
+  const { data: notes } = await fetchAllRows<{ author_id: string; created_at: string }>(() =>
+    svc.from('notes').select('author_id, created_at').neq('status', 'archived')
+  )
 
   // Build a map of user_id → school
   const schoolByUser: Record<string, string> = {}

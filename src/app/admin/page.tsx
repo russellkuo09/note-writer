@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient, isDemoMode } from '@/lib/supabase'
+import { fetchAllRows } from '@/lib/fetch-all'
 import { useRouter } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Logo from '@/components/Logo'
@@ -100,11 +101,10 @@ export default function AdminPage() {
 
   async function fetchNotes() {
     if (demoMode) return
-    const { data } = await supabase
-      .from('notes')
-      .select('*')
-      .order('created_at', { ascending: false })
-    setNotes(data ?? [])
+    const { data } = await fetchAllRows<Note>(() =>
+      supabase.from('notes').select('*').order('created_at', { ascending: false })
+    )
+    setNotes(data)
     setLoading(false)
   }
 

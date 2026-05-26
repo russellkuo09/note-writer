@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all'
+import type { Note } from '@/types'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -24,12 +26,13 @@ export async function GET(req: NextRequest) {
   const hospital = searchParams.get('hospital')
   const status = searchParams.get('status')
 
-  let query = supabase.from('notes').select('*').order('created_at', { ascending: false })
-  if (hospital) query = query.eq('hospital', hospital)
-  if (status) query = query.eq('status', status)
-
-  const { data } = await query
-  return NextResponse.json({ notes: data ?? [] })
+  const { data } = await fetchAllRows<Note>(() => {
+    let query = supabase.from('notes').select('*').order('created_at', { ascending: false })
+    if (hospital) query = query.eq('hospital', hospital)
+    if (status) query = query.eq('status', status)
+    return query
+  })
+  return NextResponse.json({ notes: data })
 }
 
 export async function PATCH(req: NextRequest) {

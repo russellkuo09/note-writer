@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 export interface ActivityRow {
   authorId: string
@@ -64,11 +65,14 @@ export async function GET(req: NextRequest) {
     : (params.get('school') ?? null)
 
   // 1. Fetch profiles (with school)
-  let profileQuery = svc.from('profiles').select('id, name, email, location, school')
-  if (schoolFilter) profileQuery = profileQuery.eq('school', schoolFilter)
-  const { data: profiles } = await profileQuery
+  type ProfileRow = { id: string; name: string | null; email: string | null; location: string | null; school: string | null }
+  const { data: profiles } = await fetchAllRows<ProfileRow>(() => {
+    let q = svc.from('profiles').select('id, name, email, location, school')
+    if (schoolFilter) q = q.eq('school', schoolFilter)
+    return q
+  })
 
-  if (!profiles || profiles.length === 0) {
+  if (profiles.length === 0) {
     return NextResponse.json({ users: [], schools: [], dateRange: { from: fromDate, to: toDate } })
   }
 
@@ -80,20 +84,25 @@ export async function GET(req: NextRequest) {
   const memberIds = profiles.map(p => p.id)
 
   // 2. Fetch notes within date range for those members
-  const { data: notes } = await svc
-    .from('notes')
-    .select('author_id, created_at, status')
-    .in('author_id', memberIds)
-    .in('status', ['queued', 'printed'])
-    .gte('created_at', `${fromDate}T00:00:00.000Z`)
-    .lte('created_at', `${toDate}T23:59:59.999Z`)
+  type NoteRow = { author_id: string; created_at: string; status: string }
+  const { data: notes } = await fetchAllRows<NoteRow>(() =>
+    svc
+      .from('notes')
+      .select('author_id, created_at, status')
+      .in('author_id', memberIds)
+      .in('status', ['queued', 'printed'])
+      .gte('created_at', `${fromDate}T00:00:00.000Z`)
+      .lte('created_at', `${toDate}T23:59:59.999Z`)
+  )
 
   // 3. Fetch ALL-TIME notes for totals (not date-filtered)
-  const { data: allNotes } = await svc
-    .from('notes')
-    .select('author_id, created_at, status')
-    .in('author_id', memberIds)
-    .in('status', ['queued', 'printed'])
+  const { data: allNotes } = await fetchAllRows<NoteRow>(() =>
+    svc
+      .from('notes')
+      .select('author_id, created_at, status')
+      .in('author_id', memberIds)
+      .in('status', ['queued', 'printed'])
+  )
 
   // 4. Compute current month for "this month" stat
   const nowYM = new Date().toISOString().slice(0, 7) // YYYY-MM
@@ -117,7 +126,7 @@ export async function GET(req: NextRequest) {
   }
 
   // All-time totals + last active
-  for (const n of allNotes ?? []) {
+  for (const n of allNotes) {
     const u = userMap[n.author_id]
     if (!u) continue
     u.totalNotes++
@@ -126,7 +135,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Daily counts within date range
-  for (const n of notes ?? []) {
+  for (const n of notes) {
     const u = userMap[n.author_id]
     if (!u) continue
     const day = n.created_at.slice(0, 10)

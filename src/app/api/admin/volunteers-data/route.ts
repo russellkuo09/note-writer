@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase-server'
+import { fetchAllRows } from '@/lib/fetch-all'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -31,31 +32,34 @@ export async function GET() {
   const svc = createServiceClient()
 
   // Fetch profiles — try with school column first, gracefully fall back
-  let profileData: Array<{ id: string; name: string | null; email: string | null; location: string | null; school?: string | null; role: string | null; referral_bonus_minutes: number | null }> = []
+  type ProfileRow = { id: string; name: string | null; email: string | null; location: string | null; school?: string | null; role: string | null; referral_bonus_minutes: number | null }
+  let profileData: ProfileRow[] = []
 
-  const withSchool = await svc
-    .from('profiles')
-    .select('id, name, email, location, role, referral_bonus_minutes, school')
+  const withSchool = await fetchAllRows<ProfileRow>(() =>
+    svc.from('profiles').select('id, name, email, location, role, referral_bonus_minutes, school')
+  )
 
   if (withSchool.error) {
     // school column doesn't exist yet — fetch without it
-    const withoutSchool = await svc
-      .from('profiles')
-      .select('id, name, email, location, role, referral_bonus_minutes')
-    profileData = withoutSchool.data ?? []
+    const withoutSchool = await fetchAllRows<ProfileRow>(() =>
+      svc.from('profiles').select('id, name, email, location, role, referral_bonus_minutes')
+    )
+    profileData = withoutSchool.data
   } else {
-    profileData = withSchool.data ?? []
+    profileData = withSchool.data
   }
 
   // Fetch volunteer_hours joined with non-archived notes
-  const { data: hoursRows } = await svc
-    .from('volunteer_hours')
-    .select('user_id, minutes, notes!inner(status)')
-    .neq('notes.status', 'archived')
+  const { data: hoursRows } = await fetchAllRows<{ user_id: string; minutes: number }>(() =>
+    svc
+      .from('volunteer_hours')
+      .select('user_id, minutes, notes!inner(status)')
+      .neq('notes.status', 'archived')
+  )
 
   // Aggregate per user
   const byUser: Record<string, { notes: number; noteMinutes: number }> = {}
-  for (const h of hoursRows ?? []) {
+  for (const h of hoursRows) {
     if (!byUser[h.user_id]) byUser[h.user_id] = { notes: 0, noteMinutes: 0 }
     byUser[h.user_id].notes++
     byUser[h.user_id].noteMinutes += h.minutes
