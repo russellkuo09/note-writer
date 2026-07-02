@@ -327,14 +327,14 @@ setGlobalNoteCount(data.total_notes ?? 0)
           </p>
           <p className="font-body text-charcoal/60 text-base leading-relaxed max-w-sm mb-10 animate-fade-in-up stagger-3">
             We print it and tuck it into a real flower bouquet — delivered by our team to
-            pediatric patients at Shriners, Whittier, HealthBridge, and PVHMC.
+            pediatric patients at Shriners, Whittier, HealthBridge, PVHMC, LA Ronald McDonald House, and Texas Children&rsquo;s Hospital.
           </p>
 
           {/* Stats pill */}
           <div className="flex items-center gap-3 px-5 py-3 bg-blush rounded-full mb-10 animate-fade-in-up stagger-4">
             <span className="text-xl">💐</span>
             <span className="font-body font-semibold text-primary text-sm">
-              100+ bouquets delivered across 4 hospitals
+              200+ bouquets delivered across 6 hospitals
             </span>
           </div>
 
